@@ -444,6 +444,7 @@
             </div>
 
             <span id="currentFileName" style="font-size: 0.8rem; color: var(--ms-text-muted); font-weight: 500;">No file loaded</span>
+            <a href="#" id="openFullTabBtn" target="_blank" class="btn" style="padding: 4px 10px; font-size: 0.75rem; text-decoration: none; color: white;">↗ Open Full Screen</a>
         </div>
 
         <div class="navbar">
@@ -581,6 +582,9 @@
 </div>
 
 <script>
+    // Link Open Full Screen button dynamically to current URL
+    document.getElementById('openFullTabBtn').href = window.location.href;
+
     let globalFile = null;
     let globalImageBuffer = null;
     let masterImg = new Image();
