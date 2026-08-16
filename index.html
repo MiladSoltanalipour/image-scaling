@@ -141,13 +141,14 @@
         }
         canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
         .toolbar-group {
-            position: absolute; bottom: 10px; background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(10px); padding: 4px 8px; border-radius: 10px;
+            position: absolute; background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px); padding: 4px 10px; border-radius: 10px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.08); display: flex; gap: 6px; align-items: center;
             z-index: 10; border: 1px solid var(--ms-border); font-size: 0.7rem; font-weight: 600;
         }
-        .zoom-toolbar { right: 10px; }
-        .grid-toolbar { left: 10px; }
+        .zoom-toolbar { right: 10px; bottom: 10px; }
+        .grid-toolbar { left: 10px; bottom: 10px; }
+        .rotate-toolbar { left: 50%; transform: translateX(-50%); bottom: 10px; gap: 8px; }
         .axis-toolbar { top: 10px; right: 10px; bottom: auto; }
         .zoom-btn, .grid-adj-btn, .fade-btn {
             background: #ffffff; border: 1px solid var(--ms-border); padding: 3px 8px;
@@ -157,6 +158,26 @@
         .zoom-btn:hover, .grid-adj-btn:hover, .fade-btn:hover { background: var(--ms-accent-soft); color: var(--ms-accent); border-color: var(--ms-border-hover); }
         .fade-btn.active, .axis-btn.active { background: var(--ms-accent); color: white; border-color: var(--ms-accent); }
         
+        /* Rotator Slider Styling */
+        .rotate-slider {
+            -webkit-appearance: none;
+            width: 110px;
+            height: 4px;
+            border-radius: 2px;
+            background: #e5e5ea;
+            outline: none;
+        }
+        .rotate-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--ms-accent);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,122,255,0.4);
+        }
+
         .table-wrapper { max-height: 200px; overflow-y: auto; border: 1px solid var(--ms-border); border-radius: 10px; flex-shrink: 0; background: #fbfbfd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
         th, td { border: 1px solid var(--ms-border); padding: 6px; text-align: left; }
@@ -300,6 +321,15 @@
                         <button class="grid-adj-btn" id="gridDecBtn" title="Fewer Lines">-</button>
                         <button class="grid-adj-btn" id="gridIncBtn" title="More Lines">+</button>
                     </div>
+
+                    <!-- Photo Rotation Control Bar -->
+                    <div class="toolbar-group rotate-toolbar">
+                        <span>↻ Angle:</span>
+                        <input type="range" id="rotateSlider" class="rotate-slider" min="-180" max="180" step="0.1" value="0" title="Drag to rotate image">
+                        <input type="number" id="rotateInput" min="-360" max="360" step="0.1" value="0.0" style="width: 52px; text-align: center;" title="Exact angle input"> °
+                        <button class="zoom-btn" id="rotateResetBtn" title="Reset image rotation to 0°">Reset Angle</button>
+                    </div>
+
                     <div class="toolbar-group zoom-toolbar">
                         <button class="fade-btn" id="fadeBtn" title="Fade to White">Fade</button>
                         <button class="zoom-btn" id="zoomInBtn" title="Zoom In">+</button>
@@ -443,7 +473,7 @@
     document.getElementById('menuUploadBtn').addEventListener('click', () => masterLoader.click());
     document.getElementById('menuResetAllBtn').addEventListener('click', () => {
         if (!masterImg.src) return;
-        if (confirm("Reset all measurements and calibration for this image?")) {
+        if (confirm("Reset all measurements, calibration, and rotation for this image?")) {
             resetMeasurementsAndCalib();
         }
     });
@@ -470,6 +500,9 @@
         calibrationLine1 = null;
         isCalibrated1 = false;
         pixelsPerMm1 = null;
+        rotationAngleDeg = 0;
+        document.getElementById('rotateSlider').value = 0;
+        document.getElementById('rotateInput').value = "0.0";
         actionHistory1 = [];
         redoHistory1 = [];
         updateTable1();
@@ -599,6 +632,31 @@
     const axisToolbarGroup = document.getElementById('axisToolbarGroup');
     const measurementsTable1 = document.getElementById('measurementsTable').querySelector('tbody');
     
+    /* Rotation variables & UI controls */
+    let rotationAngleDeg = 0;
+    const rotateSlider = document.getElementById('rotateSlider');
+    const rotateInput = document.getElementById('rotateInput');
+    const rotateResetBtn = document.getElementById('rotateResetBtn');
+
+    rotateSlider.addEventListener('input', (e) => {
+        rotationAngleDeg = parseFloat(e.target.value) || 0;
+        rotateInput.value = rotationAngleDeg.toFixed(1);
+        redrawCanvas1();
+    });
+
+    rotateInput.addEventListener('input', (e) => {
+        rotationAngleDeg = parseFloat(e.target.value) || 0;
+        rotateSlider.value = rotationAngleDeg;
+        redrawCanvas1();
+    });
+
+    rotateResetBtn.addEventListener('click', () => {
+        rotationAngleDeg = 0;
+        rotateSlider.value = 0;
+        rotateInput.value = "0.0";
+        redrawCanvas1();
+    });
+
     const gridStepDisplay = document.getElementById('gridStepDisplay');
     const contextMenu = document.getElementById('contextMenu');
     let isCalibrated1 = false;
@@ -656,7 +714,7 @@
         redrawCanvas1();
     });
     document.getElementById('menuGridBlack').addEventListener('click', () => {
-        gridColorStyle = DEFAULT_GRID_STYLE; // Matches default dark/slate black color
+        gridColorStyle = DEFAULT_GRID_STYLE;
         redrawCanvas1();
     });
     fadeBtn.addEventListener('click', () => {
@@ -900,13 +958,55 @@
         redrawCanvas1();
     });
 
+    /* Helper: Convert Canvas Coordinates to Original Unrotated Image Coordinates */
+    function canvasToUnrotatedImgCoords(cx, cy) {
+        let px = (cx - panX1) / scale1;
+        let py = (cy - panY1) / scale1;
+        let cxImg = masterImg.width / 2;
+        let cyImg = masterImg.height / 2;
+        let dx = px - cxImg;
+        let dy = py - cyImg;
+        
+        let rad = -(rotationAngleDeg * Math.PI / 180);
+        let cos = Math.cos(rad);
+        let sin = Math.sin(rad);
+        
+        let unrotX = dx * cos - dy * sin;
+        let unrotY = dx * sin + dy * cos;
+        
+        return {
+            x: unrotX + cxImg,
+            y: unrotY + cyImg
+        };
+    }
+
+    /* Helper: Convert Unrotated Image Coordinates back to Screen/Canvas Pixel Coordinates */
+    function unrotatedImgToCanvasCoords(x, y) {
+        let cxImg = masterImg.width / 2;
+        let cyImg = masterImg.height / 2;
+        let dx = x - cxImg;
+        let dy = y - cyImg;
+        
+        let rad = rotationAngleDeg * Math.PI / 180;
+        let cos = Math.cos(rad);
+        let sin = Math.sin(rad);
+        
+        let rotX = dx * cos - dy * sin;
+        let rotY = dx * sin + dy * cos;
+        
+        return {
+            x: (rotX + cxImg) * scale1 + panX1,
+            y: (rotY + cyImg) * scale1 + panY1
+        };
+    }
+
     canvas1.addEventListener('mousedown', (e) => {
         if (!masterImg.src) return;
         contextMenu.style.display = 'none';
         const rect = canvas1.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
-        const imgCoords = { x: (cx - panX1) / scale1, y: (cy - panY1) / scale1 };
+        const imgCoords = canvasToUnrotatedImgCoords(cx, cy);
 
         if (e.button === 2) {
             isRightDragging = true;
@@ -993,7 +1093,7 @@
         const rect = canvas1.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
-        const imgCoords = { x: (cx - panX1) / scale1, y: (cy - panY1) / scale1 };
+        const imgCoords = canvasToUnrotatedImgCoords(cx, cy);
 
         if (isRightDragging) {
             rightCurrentX = cx; rightCurrentY = cy;
@@ -1046,19 +1146,28 @@
             let curY = imgCoords.y;
 
             if (draggingEndpoint.type === 'calib') {
-                if (draggingEndpoint.point === 'start') {
-                    if (e.shiftKey) {
-                        let dx = Math.abs(curX - calibrationLine1.endX);
-                        let dy = Math.abs(curY - calibrationLine1.endY);
-                        if (dx > dy) curY = calibrationLine1.endY; else curX = calibrationLine1.endX;
+                let anchorX = (draggingEndpoint.point === 'start') ? calibrationLine1.endX : calibrationLine1.startX;
+                let anchorY = (draggingEndpoint.point === 'start') ? calibrationLine1.endY : calibrationLine1.startY;
+
+                if (e.shiftKey) {
+                    let anchorScreen = unrotatedImgToCanvasCoords(anchorX, anchorY);
+                    let dxScreen = Math.abs(cx - anchorScreen.x);
+                    let dyScreen = Math.abs(cy - anchorScreen.y);
+                    let constrainedCx = cx;
+                    let constrainedCy = cy;
+                    if (dxScreen > dyScreen) {
+                        constrainedCy = anchorScreen.y;
+                    } else {
+                        constrainedCx = anchorScreen.x;
                     }
+                    let constrainedImg = canvasToUnrotatedImgCoords(constrainedCx, constrainedCy);
+                    curX = constrainedImg.x;
+                    curY = constrainedImg.y;
+                }
+
+                if (draggingEndpoint.point === 'start') {
                     calibrationLine1.startX = curX; calibrationLine1.startY = curY;
                 } else {
-                    if (e.shiftKey) {
-                        let dx = Math.abs(curX - calibrationLine1.startX);
-                        let dy = Math.abs(curY - calibrationLine1.startY);
-                        if (dx > dy) curY = calibrationLine1.startY; else curX = calibrationLine1.startX;
-                    }
                     calibrationLine1.endX = curX; calibrationLine1.endY = curY;
                 }
                 const dx = calibrationLine1.endX - calibrationLine1.startX;
@@ -1068,19 +1177,28 @@
                 updateAllMeasurementsScale();
             } else if (draggingEndpoint.type === 'meas') {
                 let m = measurements1[draggingEndpoint.index];
-                if (draggingEndpoint.point === 'start') {
-                    if (e.shiftKey) {
-                        let dx = Math.abs(curX - m.endX);
-                        let dy = Math.abs(curY - m.endY);
-                        if (dx > dy) curY = m.endY; else curX = m.endX;
+                let anchorX = (draggingEndpoint.point === 'start') ? m.endX : m.startX;
+                let anchorY = (draggingEndpoint.point === 'start') ? m.endY : m.startY;
+
+                if (e.shiftKey) {
+                    let anchorScreen = unrotatedImgToCanvasCoords(anchorX, anchorY);
+                    let dxScreen = Math.abs(cx - anchorScreen.x);
+                    let dyScreen = Math.abs(cy - anchorScreen.y);
+                    let constrainedCx = cx;
+                    let constrainedCy = cy;
+                    if (dxScreen > dyScreen) {
+                        constrainedCy = anchorScreen.y;
+                    } else {
+                        constrainedCx = anchorScreen.x;
                     }
+                    let constrainedImg = canvasToUnrotatedImgCoords(constrainedCx, constrainedCy);
+                    curX = constrainedImg.x;
+                    curY = constrainedImg.y;
+                }
+
+                if (draggingEndpoint.point === 'start') {
                     m.startX = curX; m.startY = curY;
                 } else {
-                    if (e.shiftKey) {
-                        let dx = Math.abs(curX - m.startX);
-                        let dy = Math.abs(curY - m.startY);
-                        if (dx > dy) curY = m.startY; else curX = m.startX;
-                    }
                     m.endX = curX; m.endY = curY;
                 }
                 m.pixelLength = Math.hypot(m.endX - m.startX, m.endY - m.startY);
@@ -1113,14 +1231,22 @@
 
         let targetX = imgCoords.x;
         let targetY = imgCoords.y;
+        
+        /* Shift-key alignment forced in true screen/viewport horizontal and vertical space */
         if (e.shiftKey) {
-            let dx = Math.abs(targetX - startX1);
-            let dy = Math.abs(targetY - startY1);
-            if (dx > dy) {
-                targetY = startY1; 
+            let anchorScreen = unrotatedImgToCanvasCoords(startX1, startY1);
+            let dxScreen = Math.abs(cx - anchorScreen.x);
+            let dyScreen = Math.abs(cy - anchorScreen.y);
+            let constrainedCx = cx;
+            let constrainedCy = cy;
+            if (dxScreen > dyScreen) {
+                constrainedCy = anchorScreen.y;
             } else {
-                targetX = startX1; 
+                constrainedCx = anchorScreen.x;
             }
+            let constrainedImg = canvasToUnrotatedImgCoords(constrainedCx, constrainedCy);
+            targetX = constrainedImg.x;
+            targetY = constrainedImg.y;
         }
         endX1 = targetX; 
         endY1 = targetY;
@@ -1131,7 +1257,6 @@
     });
 
     canvas1.addEventListener('mouseup', (e) => {
-        /* AutoCAD-Style Right Click Animated Box Zoom */
         if (e.button === 2 && isRightDragging) {
             isRightDragging = false;
             let boxW = Math.abs(rightCurrentX - rightStartX);
@@ -1152,12 +1277,12 @@
 
                 let startPanX = panX1, startPanY = panY1, startScale = scale1;
                 let startTime = performance.now();
-                let duration = 180; // Smooth 180ms quick zoom animation
+                let duration = 180;
 
                 function animateZoom(time) {
                     let elapsed = time - startTime;
                     let progress = Math.min(1, elapsed / duration);
-                    let ease = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+                    let ease = 1 - Math.pow(1 - progress, 3);
 
                     panX1 = startPanX + (targetPanX - startPanX) * ease;
                     panY1 = startPanY + (targetPanY - startPanY) * ease;
@@ -1230,7 +1355,7 @@
         const rect = canvas1.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
-        const imgCoords = { x: (cx - panX1) / scale1, y: (cy - panY1) / scale1 };
+        const imgCoords = canvasToUnrotatedImgCoords(cx, cy);
         const threshold = 15 / scale1;
         for (let i = 0; i < measurements1.length; i++) {
             let m = measurements1[i];
@@ -1252,13 +1377,13 @@
         e.preventDefault();
         if (didRightDragZoom) {
             didRightDragZoom = false;
-            return; // Suppress context menu if a right-drag zoom was performed
+            return;
         }
 
         const rect = canvas1.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
-        const imgCoords = { x: (cx - panX1) / scale1, y: (cy - panY1) / scale1 };
+        const imgCoords = canvasToUnrotatedImgCoords(cx, cy);
         const threshold = 10 / scale1;
         selectedLineIndexForCtx = -1;
         isCalibrationSelectedForCtx = false;
@@ -1333,6 +1458,13 @@
         ctx1.save();
         ctx1.translate(panX1, panY1);
         ctx1.scale(scale1, scale1);
+        
+        /* Apply Photo Rotation around Image Center */
+        ctx1.save();
+        ctx1.translate(masterImg.width / 2, masterImg.height / 2);
+        ctx1.rotate(rotationAngleDeg * Math.PI / 180);
+        ctx1.translate(-masterImg.width / 2, -masterImg.height / 2);
+
         if (isFaded) {
             ctx1.fillStyle = "#ffffff";
             ctx1.fillRect(0, 0, masterImg.width, masterImg.height);
@@ -1342,9 +1474,7 @@
         } else {
             ctx1.drawImage(masterImg, 0, 0);
         }
-        if (toggleGrid1.checked) {
-            drawGrid1();
-        }
+
         if (calibrationLine1) {
             let calMmLabel = pixelsPerMm1 ? `Calibration: ${calibrationLine1.realMm.toFixed(1)} mm` : `Calibration: ${calibrationLine1.pixelLength.toFixed(1)} px`;
             drawLine1(calibrationLine1.startX, calibrationLine1.startY, calibrationLine1.endX, calibrationLine1.endY, calibrationColor, calMmLabel);
@@ -1354,6 +1484,12 @@
             let lineColor = m.color || "#007AFF";
             drawLine1(m.startX, m.startY, m.endX, m.endY, lineColor, mmLabel);
         });
+        ctx1.restore(); // Restore back so grid stays fixed and non-rotated
+
+        if (toggleGrid1.checked) {
+            drawGrid1();
+        }
+
         ctx1.restore();
         if (toggleGrid1.checked) {
             drawExternalAxes();
@@ -1365,6 +1501,9 @@
         ctx1.save();
         ctx1.translate(panX1, panY1);
         ctx1.scale(scale1, scale1);
+        ctx1.translate(masterImg.width / 2, masterImg.height / 2);
+        ctx1.rotate(rotationAngleDeg * Math.PI / 180);
+        ctx1.translate(-masterImg.width / 2, -masterImg.height / 2);
         
         ctx1.strokeStyle = lineColor;
         ctx1.fillStyle = lineColor;
@@ -1421,6 +1560,7 @@
         ctx1.restore();
     }
 
+    /* Fixed grid overlay (does not rotate with photo) */
     function drawGrid1() {
         ctx1.save();
         ctx1.strokeStyle = gridColorStyle;
@@ -1512,7 +1652,7 @@
         }
     }
 
-    /* Tab-Separated Data Exports (Identical columns for Excel & Text) */
+    /* Tab-Separated Data Exports (Exports in original unrotated photo coordinate space) */
     function generateExportData() {
         let content = "Name\tStart X (px)\tStart Y (px)\tEnd X (px)\tEnd Y (px)\tStart X (mm)\tStart Y (mm)\tEnd X (mm)\tEnd Y (mm)\tLength (px)\tLength (mm)\r\n";
         
