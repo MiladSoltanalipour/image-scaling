@@ -140,16 +140,22 @@
             background: #ffffff; overflow: hidden; border-radius: 12px; margin: auto;
         }
         canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+        
+        /* Draggable Toolbar Groups */
         .toolbar-group {
             position: absolute; background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(10px); padding: 4px 10px; border-radius: 10px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.08); display: flex; gap: 6px; align-items: center;
             z-index: 10; border: 1px solid var(--ms-border); font-size: 0.7rem; font-weight: 600;
+            cursor: grab; user-select: none;
         }
-        .zoom-toolbar { right: 10px; bottom: 10px; }
+        .toolbar-group:active { cursor: grabbing; }
+        
         .grid-toolbar { left: 10px; bottom: 10px; }
-        .rotate-toolbar { left: 50%; transform: translateX(-50%); bottom: 10px; gap: 8px; }
-        .axis-toolbar { top: 10px; right: 10px; bottom: auto; }
+        .zoom-toolbar { right: 10px; bottom: 50px; }
+        .rotate-toolbar { right: 10px; bottom: 10px; gap: 8px; }
+        .axis-toolbar { top: 10px; right: 10px; bottom: auto; cursor: default; }
+
         .zoom-btn, .grid-adj-btn, .fade-btn {
             background: #ffffff; border: 1px solid var(--ms-border); padding: 3px 8px;
             border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem;
@@ -161,7 +167,7 @@
         /* Rotator Slider Styling */
         .rotate-slider {
             -webkit-appearance: none;
-            width: 110px;
+            width: 90px;
             height: 4px;
             border-radius: 2px;
             background: #e5e5ea;
@@ -315,27 +321,31 @@
         <div class="main-container">
             <div class="panel canvas-panel">
                 <div class="canvas-container" id="canvasContainer">
-                    <div class="toolbar-group grid-toolbar">
-                        <input type="checkbox" id="toggleGrid" checked style="cursor:pointer;">
+                    <div class="toolbar-group grid-toolbar draggable-widget">
+                        <input type="checkbox" id="toggleGrid" checked style="cursor:pointer;" title="Show/Hide Grid">
                         <span>Grid: <strong id="gridStepDisplay">100 px</strong></span>
                         <button class="grid-adj-btn" id="gridDecBtn" title="Fewer Lines">-</button>
                         <button class="grid-adj-btn" id="gridIncBtn" title="More Lines">+</button>
+                        <span style="border-left: 1px solid var(--ms-border); margin: 0 4px; height: 12px;"></span>
+                        <input type="checkbox" id="toggleLabels" checked style="cursor:pointer;" title="Show/Hide Line Captions">
+                        <span>Labels</span>
                     </div>
 
-                    <!-- Photo Rotation Control Bar -->
-                    <div class="toolbar-group rotate-toolbar">
+                    <!-- Photo Rotation Control Bar (Bottom Right, above Zoom) -->
+                    <div class="toolbar-group rotate-toolbar draggable-widget">
                         <span>↻ Angle:</span>
                         <input type="range" id="rotateSlider" class="rotate-slider" min="-180" max="180" step="0.1" value="0" title="Drag to rotate image">
-                        <input type="number" id="rotateInput" min="-360" max="360" step="0.1" value="0.0" style="width: 52px; text-align: center;" title="Exact angle input"> °
-                        <button class="zoom-btn" id="rotateResetBtn" title="Reset image rotation to 0°">Reset Angle</button>
+                        <input type="number" id="rotateInput" min="-360" max="360" step="0.1" value="0.0" style="width: 46px; text-align: center;" title="Exact angle input"> °
+                        <button class="zoom-btn" id="rotateResetBtn" title="Reset image rotation to 0°">Reset</button>
                     </div>
 
-                    <div class="toolbar-group zoom-toolbar">
+                    <div class="toolbar-group zoom-toolbar draggable-widget">
                         <button class="fade-btn" id="fadeBtn" title="Fade to White">Fade</button>
                         <button class="zoom-btn" id="zoomInBtn" title="Zoom In">+</button>
                         <button class="zoom-btn" id="zoomOutBtn" title="Zoom Out">-</button>
                         <button class="zoom-btn" id="zoomResetBtn" title="Reset View">Reset</button>
                     </div>
+                    
                     <div class="toolbar-group axis-toolbar" id="axisToolbarGroup" style="display:none;">
                         <button class="fade-btn axis-btn" id="axisMmBtn" title="Toggle Axis in mm">Axis: mm</button>
                     </div>
@@ -627,6 +637,7 @@
     const ctx1 = canvas1.getContext('2d');
     const container1 = document.getElementById('canvasContainer');
     const toggleGrid1 = document.getElementById('toggleGrid');
+    const toggleLabels1 = document.getElementById('toggleLabels');
     const fadeBtn = document.getElementById('fadeBtn');
     const axisMmBtn = document.getElementById('axisMmBtn');
     const axisToolbarGroup = document.getElementById('axisToolbarGroup');
@@ -656,6 +667,9 @@
         rotateInput.value = "0.0";
         redrawCanvas1();
     });
+    
+    toggleLabels1.addEventListener('change', redrawCanvas1);
+    toggleGrid1.addEventListener('change', redrawCanvas1); // Fixed instantaneous grid update
 
     const gridStepDisplay = document.getElementById('gridStepDisplay');
     const contextMenu = document.getElementById('contextMenu');
@@ -690,6 +704,52 @@
     let pendingModifiedLine = null;
     let selectedLineIndexForCtx = -1;
     let isCalibrationSelectedForCtx = false;
+
+    /* ================= DRAGGABLE WIDGETS LOGIC ================= */
+    let activeWidget = null;
+    let widgetOffsetX = 0;
+    let widgetOffsetY = 0;
+
+    document.querySelectorAll('.draggable-widget').forEach(widget => {
+        widget.addEventListener('mousedown', (e) => {
+            // Ignore if clicking on form inputs or buttons inside widget
+            if (['INPUT', 'BUTTON', 'LABEL', 'SPAN'].includes(e.target.tagName) && e.target !== widget) {
+                return;
+            }
+            activeWidget = widget;
+            const rect = widget.getBoundingClientRect();
+            const containerRect = container1.getBoundingClientRect();
+            
+            // Switch from absolute corner anchors to direct pixel placement
+            widget.style.right = 'auto';
+            widget.style.bottom = 'auto';
+            widget.style.left = (rect.left - containerRect.left) + 'px';
+            widget.style.top = (rect.top - containerRect.top) + 'px';
+
+            widgetOffsetX = e.clientX - rect.left;
+            widgetOffsetY = e.clientY - rect.top;
+            e.stopPropagation();
+        });
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!activeWidget) return;
+        const containerRect = container1.getBoundingClientRect();
+        
+        let newX = e.clientX - containerRect.left - widgetOffsetX;
+        let newY = e.clientY - containerRect.top - widgetOffsetY;
+        
+        // Keep within container bounds
+        newX = Math.max(0, Math.min(newX, container1.clientWidth - activeWidget.offsetWidth));
+        newY = Math.max(0, Math.min(newY, container1.clientHeight - activeWidget.offsetHeight));
+        
+        activeWidget.style.left = newX + 'px';
+        activeWidget.style.top = newY + 'px';
+    });
+
+    window.addEventListener('mouseup', () => {
+        activeWidget = null;
+    });
 
     document.getElementById('gridIncBtn').addEventListener('click', () => {
         customGridStepPx = Math.max(10, Math.round(customGridStepPx / 1.3));
@@ -1232,7 +1292,6 @@
         let targetX = imgCoords.x;
         let targetY = imgCoords.y;
         
-        /* Shift-key alignment forced in true screen/viewport horizontal and vertical space */
         if (e.shiftKey) {
             let anchorScreen = unrotatedImgToCanvasCoords(startX1, startY1);
             let dxScreen = Math.abs(cx - anchorScreen.x);
@@ -1447,6 +1506,107 @@
     }
     canvas1.width = 600; canvas1.height = 600;
 
+    /* Smart Label Collision & Renderer in Screen Space */
+    function drawScreenLabel(ctx, text, sp1, sp2, color, drawnBoxes = []) {
+        ctx.save();
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        let smX = (sp1.x + sp2.x) / 2;
+        let smY = (sp1.y + sp2.y) / 2;
+        
+        let dx = sp2.x - sp1.x;
+        let dy = sp2.y - sp1.y;
+        let len = Math.hypot(dx, dy);
+        
+        // Calculate normal to push the label off the line
+        let snX = 0, snY = -1;
+        if (len > 0.001) {
+            snX = -dy / len;
+            snY = dx / len;
+            // Force normal to generally point upwards visually on screen
+            if (snY > 0 || (Math.abs(snY) < 0.001 && snX < 0)) {
+                snX = -snX;
+                snY = -snY;
+            }
+        }
+        
+        let textW = ctx.measureText(text).width;
+        let boxW = textW + 12;
+        let boxH = 20;
+        
+        let offset = 18; 
+        let placed = false;
+        let finalX = smX, finalY = smY;
+        let iterations = 0;
+        let sign = 1;
+        let attemptOffset = offset;
+
+        // Collision logic
+        while (!placed && iterations < 30) {
+            let tryX = smX + snX * attemptOffset;
+            let tryY = smY + snY * attemptOffset;
+            
+            let rect = {
+                left: tryX - boxW/2,
+                right: tryX + boxW/2,
+                top: tryY - boxH/2,
+                bottom: tryY + boxH/2
+            };
+            
+            let collides = false;
+            for (let b of drawnBoxes) {
+                // Ensure small buffer of 2px between text boxes
+                if (!(rect.right < b.left - 2 || rect.left > b.right + 2 || rect.bottom < b.top - 2 || rect.top > b.bottom + 2)) {
+                    collides = true; break;
+                }
+            }
+            
+            if (!collides) {
+                finalX = tryX;
+                finalY = tryY;
+                drawnBoxes.push(rect);
+                placed = true;
+            } else {
+                iterations++;
+                // Alternate sides and extend distance to search for empty space
+                if (iterations % 2 === 1) {
+                    sign = -1;
+                } else {
+                    sign = 1;
+                    offset += 24;
+                }
+                attemptOffset = offset * sign;
+            }
+        }
+        
+        // Draw connecting visual cue line if the label had to move far
+        if (Math.abs(attemptOffset) > 20) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(smX, smY);
+            ctx.lineTo(finalX, finalY);
+            ctx.stroke();
+        }
+
+        // Draw pill background
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(finalX - boxW/2, finalY - boxH/2, boxW, boxH, 6);
+        } else {
+            ctx.fillRect(finalX - boxW/2, finalY - boxH/2, boxW, boxH);
+        }
+        ctx.fill();
+        
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(text, finalX, finalY);
+        
+        ctx.restore();
+    }
+
     function redrawCanvas1() {
         if (!masterImg.src) return;
         if (canvas1.width !== container1.clientWidth || canvas1.height !== container1.clientHeight) {
@@ -1475,28 +1635,41 @@
             ctx1.drawImage(masterImg, 0, 0);
         }
 
+        let pendingLabels = [];
+
         if (calibrationLine1) {
             let calMmLabel = pixelsPerMm1 ? `Calibration: ${calibrationLine1.realMm.toFixed(1)} mm` : `Calibration: ${calibrationLine1.pixelLength.toFixed(1)} px`;
-            drawLine1(calibrationLine1.startX, calibrationLine1.startY, calibrationLine1.endX, calibrationLine1.endY, calibrationColor, calMmLabel);
+            drawLine1(calibrationLine1.startX, calibrationLine1.startY, calibrationLine1.endX, calibrationLine1.endY, calibrationColor, calMmLabel, pendingLabels);
         }
         measurements1.forEach((m) => {
             let mmLabel = pixelsPerMm1 ? `${m.lengthMm.toFixed(1)} mm` : `${m.pixelLength.toFixed(1)} px`;
             let lineColor = m.color || "#007AFF";
-            drawLine1(m.startX, m.startY, m.endX, m.endY, lineColor, mmLabel);
+            drawLine1(m.startX, m.startY, m.endX, m.endY, lineColor, mmLabel, pendingLabels);
         });
+        
         ctx1.restore(); // Restore back so grid stays fixed and non-rotated
 
         if (toggleGrid1.checked) {
             drawGrid1();
         }
 
-        ctx1.restore();
+        ctx1.restore(); // Restore to pure, unscaled screen coordinate space for perfect 1-to-1 pixels
+        
         if (toggleGrid1.checked) {
             drawExternalAxes();
         }
+
+        // Render Labels in unscaled screen space to fix zoom scaling & prevent overlap
+        if (toggleLabels1.checked) {
+            let drawnBoxes = [];
+            for (let lbl of pendingLabels) {
+                let sp1 = unrotatedImgToCanvasCoords(lbl.x1, lbl.y1);
+                let sp2 = unrotatedImgToCanvasCoords(lbl.x2, lbl.y2);
+                drawScreenLabel(ctx1, lbl.text, sp1, sp2, lbl.color, drawnBoxes);
+            }
+        }
     }
 
-    /* Solid line live preview matching final line appearance */
     function drawTempLine1(x1, y1, x2, y2, lineColor) {
         ctx1.save();
         ctx1.translate(panX1, panY1);
@@ -1522,16 +1695,18 @@
         ctx1.beginPath(); ctx1.arc(x1, y1, radius, 0, 2 * Math.PI); ctx1.fill(); ctx1.stroke();
         ctx1.beginPath(); ctx1.arc(x2, y2, radius, 0, 2 * Math.PI); ctx1.fill(); ctx1.stroke();
 
-        const pxLen = Math.hypot(x2 - x1, y2 - y1);
-        const liveLabel = pixelsPerMm1 ? `${(pxLen / pixelsPerMm1).toFixed(1)} mm` : `${pxLen.toFixed(1)} px`;
-        const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
-        ctx1.font = `bold ${Math.max(11, 14 / scale1)}px sans-serif`;
-        ctx1.fillStyle = lineColor;
-        ctx1.fillText(liveLabel, midX + (6 / scale1), midY - (6 / scale1));
-        ctx1.restore();
+        ctx1.restore(); 
+
+        if (toggleLabels1.checked) {
+            const pxLen = Math.hypot(x2 - x1, y2 - y1);
+            const liveLabel = pixelsPerMm1 ? `${(pxLen / pixelsPerMm1).toFixed(1)} mm` : `${pxLen.toFixed(1)} px`;
+            let sp1 = unrotatedImgToCanvasCoords(x1, y1);
+            let sp2 = unrotatedImgToCanvasCoords(x2, y2);
+            drawScreenLabel(ctx1, liveLabel, sp1, sp2, lineColor, []); 
+        }
     }
 
-    function drawLine1(x1, y1, x2, y2, color, labelText) {
+    function drawLine1(x1, y1, x2, y2, color, labelText, pendingLabels) {
         ctx1.save();
         ctx1.strokeStyle = color; 
         ctx1.fillStyle = color;
@@ -1550,13 +1725,10 @@
         ctx1.beginPath(); ctx1.arc(x1, y1, radius, 0, 2 * Math.PI); ctx1.fill(); ctx1.stroke();
         ctx1.beginPath(); ctx1.arc(x2, y2, radius, 0, 2 * Math.PI); ctx1.fill(); ctx1.stroke();
         
-        const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
-        ctx1.font = `bold ${Math.max(11, 14 / scale1)}px sans-serif`;
-        ctx1.fillStyle = "#ffffff"; 
-        ctx1.strokeStyle = "#000000"; 
-        ctx1.lineWidth = 3 / scale1;
-        ctx1.strokeText(labelText, midX + (6 / scale1), midY - (6 / scale1));
-        ctx1.fillText(labelText, midX + (6 / scale1), midY - (6 / scale1));
+        if (pendingLabels && toggleLabels1.checked) {
+            pendingLabels.push({ text: labelText, color: color, x1, y1, x2, y2 });
+        }
+
         ctx1.restore();
     }
 
@@ -1625,8 +1797,6 @@
         }
         ctx1.restore();
     }
-
-    toggleGrid1.addEventListener('change', redrawCanvas1);
 
     function updateTable1() {
         measurementsTable1.innerHTML = "";
@@ -1697,4 +1867,3 @@
 </script>
 </body>
 </html>
- 
