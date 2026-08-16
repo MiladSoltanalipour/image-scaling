@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Analysis & Calibration Suite</title>
+    <title>Precision Image Calibrator</title>
     <!-- EXIF.js library for reading image metadata -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <style>
@@ -25,7 +25,6 @@
             
             --ms-font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
         }
-
         body {
             font-family: var(--ms-font-stack);
             background-color: var(--ms-bg);
@@ -40,7 +39,6 @@
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
         }
-
         .ms-wrapper {
             background-color: var(--ms-bg);
             padding: 5px 10px;
@@ -54,7 +52,6 @@
             flex: 1;
             min-height: 0;
         }
-
         /* Top Menu Bar themed */
         .top-menu-bar {
             display: flex;
@@ -68,29 +65,6 @@
             margin-bottom: 8px;
             box-sizing: border-box;
         }
-
-        /* NATIVE FILE UPLOAD BUTTON STYLING */
-        .native-file-btn {
-            font-size: 0.8rem;
-            color: var(--ms-text-main);
-            cursor: pointer;
-        }
-        .native-file-btn::file-selector-button {
-            background-color: var(--ms-accent);
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-            margin-right: 10px;
-        }
-        .native-file-btn::file-selector-button:hover {
-            box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
-            transform: scale(1.02);
-        }
-
         .menu-dropdown { position: relative; display: inline-block; }
         .menu-btn {
             background: transparent; border: none; font-weight: 600;
@@ -98,10 +72,9 @@
             cursor: pointer; font-size: 0.85rem; transition: all 0.2s ease;
         }
         .menu-btn:hover { background: var(--ms-accent-soft); color: var(--ms-accent); }
-
         .dropdown-content {
             display: none; position: absolute; background-color: var(--ms-card-bg);
-            min-width: 160px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            min-width: 180px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
             border-radius: 12px; z-index: 100; border: 1px solid var(--ms-border);
             top: 100%; left: 0; padding: 4px 0;
         }
@@ -111,41 +84,62 @@
         }
         .dropdown-content a:hover { background-color: var(--ms-accent-soft); color: var(--ms-accent); }
         .menu-dropdown:hover > .dropdown-content { display: block; }
-
-        .navbar { display: flex; gap: 6px; }
-        .nav-btn {
-            background: transparent; border: 1px solid transparent; padding: 4px 12px;
-            border-radius: 100px; cursor: pointer; font-weight: 600; color: var(--ms-text-muted);
-            font-size: 0.8rem; transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        
+        /* Top Status Indicator Badge */
+        .top-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fbfbfd;
+            border: 1px solid var(--ms-border);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--ms-text-muted);
         }
-        .nav-btn:hover { color: var(--ms-accent); background: var(--ms-accent-soft); }
-        .nav-btn.active { background: var(--ms-accent); color: white; box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3); }
+        .top-status-badge strong { color: var(--ms-text-main); }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ff9500;
+            box-shadow: 0 0 6px rgba(255, 149, 0, 0.4);
+            transition: all 0.3s;
+        }
+        .status-dot.active {
+            background-color: #34c759;
+            box-shadow: 0 0 6px rgba(52, 199, 89, 0.5);
+        }
 
-        .module-view { display: none; width: 100%; flex-direction: column; align-items: center; flex: 1; min-height: 0; }
-        .module-view.active { display: flex; }
+        .module-view { display: flex; width: 100%; flex-direction: column; align-items: center; flex: 1; min-height: 0; }
         .main-container { display: flex; gap: 12px; width: 100%; flex: 1; min-height: 0; }
-
         .panel {
             background: var(--ms-card-bg); border: 1px solid var(--ms-border);
             border-radius: 16px; padding: 12px; box-shadow: var(--ms-shadow-card);
             box-sizing: border-box; display: flex; flex-direction: column;
         }
-        .right-panel { flex: 1.4; min-width: 340px; gap: 8px; overflow-y: auto; max-height: 100%; }
+        /* Right sidebar with independent vertical scrolling */
+        .right-panel { 
+            flex: 1.4; 
+            min-width: 340px; 
+            gap: 10px; 
+            overflow-y: auto; 
+            max-height: 100%; 
+            box-sizing: border-box;
+        }
         .canvas-panel { flex: 3; min-width: 450px; align-items: center; position: relative; }
-
         .btn {
             background-color: var(--ms-accent); color: white; padding: 6px 12px;
             border: none; border-radius: 100px; cursor: pointer; font-weight: 600; font-size: 0.8rem;
             text-align: center; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
         }
         .btn:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4); }
-
         .canvas-container {
             position: relative; width: 100%; height: 100%; border: 1px solid var(--ms-border);
             background: #ffffff; overflow: hidden; border-radius: 12px; margin: auto;
         }
         canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
-
         .toolbar-group {
             position: absolute; bottom: 10px; background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(10px); padding: 4px 8px; border-radius: 10px;
@@ -155,7 +149,6 @@
         .zoom-toolbar { right: 10px; }
         .grid-toolbar { left: 10px; }
         .axis-toolbar { top: 10px; right: 10px; bottom: auto; }
-
         .zoom-btn, .grid-adj-btn, .fade-btn {
             background: #ffffff; border: 1px solid var(--ms-border); padding: 3px 8px;
             border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem;
@@ -163,45 +156,106 @@
         }
         .zoom-btn:hover, .grid-adj-btn:hover, .fade-btn:hover { background: var(--ms-accent-soft); color: var(--ms-accent); border-color: var(--ms-border-hover); }
         .fade-btn.active, .axis-btn.active { background: var(--ms-accent); color: white; border-color: var(--ms-accent); }
-
-        .status-box { background: #fbfbfd; padding: 8px 12px; border-radius: 10px; font-size: 0.75rem; border: 1px solid var(--ms-border); color: var(--ms-text-muted); }
-        .status-box strong { color: var(--ms-text-main); }
-        .table-wrapper { max-height: 220px; overflow-y: auto; border: 1px solid var(--ms-border); border-radius: 10px; flex: 1; background: #fbfbfd; }
+        
+        .table-wrapper { max-height: 200px; overflow-y: auto; border: 1px solid var(--ms-border); border-radius: 10px; flex-shrink: 0; background: #fbfbfd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
         th, td { border: 1px solid var(--ms-border); padding: 6px; text-align: left; }
         th { background-color: #f5f5f7; position: sticky; top: 0; z-index: 1; color: var(--ms-text-muted); font-weight: 700; }
         input[type="text"].name-input, input[type="number"] { width: 90%; padding: 3px 6px; border: 1px solid var(--ms-border); border-radius: 6px; font-size: 0.75rem; background: white; color: var(--ms-text-main); }
-
         #contextMenu { display: none; position: absolute; background: #ffffff; border: 1px solid var(--ms-border); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 10px; z-index: 1000; padding: 4px 0; }
         #contextMenu button { background: none; border: none; width: 100%; text-align: left; padding: 6px 14px; font-size: 0.75rem; cursor: pointer; color: #ff3b30; font-weight: 600; }
         #contextMenu button:hover { background: rgba(255, 59, 48, 0.08); }
+        
+        /* Unified Sidebar Cards */
+        .sidebar-card {
+            background: #fbfbfd;
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-card h4 {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--ms-accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .meta-item {
+            background: #ffffff;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--ms-border);
+        }
+        .meta-item.full-width {
+            grid-column: 1 / -1;
+        }
+        .meta-item-label {
+            font-size: 8px;
+            color: var(--ms-text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .meta-item-val {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--ms-text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-        .full-card { background: var(--ms-card-bg); border-radius: 16px; padding: 16px; box-shadow: var(--ms-shadow-card); width: 100%; box-sizing: border-box; border: 1px solid var(--ms-border); display: flex; flex-direction: column; flex: 1; overflow-y: auto; }
-        .results-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; width: 100%; flex: 1; min-height: 0; }
-        .preview-img { max-width: 100%; max-height: 180px; border-radius: 10px; object-fit: contain; border: 1px solid var(--ms-border); display: block; margin: 0 auto; }
-        .highlight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-        .stat-box { background: #fbfbfd; padding: 10px; border-radius: 10px; border: 1px solid var(--ms-border); }
-        .stat-label { font-size: 9px; color: var(--ms-text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
-        .stat-value { font-size: 0.85rem; font-weight: 800; margin-top: 3px; background: var(--ms-accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; word-break: break-word; }
-        .dist-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
-        .dist-control { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; font-weight: 600; color: var(--ms-text-muted); }
+        /* About Modal Styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px 24px;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 1px solid var(--ms-border);
+            text-align: center;
+        }
+        .modal-card h3 { margin: 0 0 6px 0; font-size: 1.1rem; color: var(--ms-text-main); }
+        .modal-card p { font-size: 0.8rem; color: var(--ms-text-muted); margin: 6px 0; line-height: 1.4; }
+        .modal-card a { color: var(--ms-accent); text-decoration: none; font-weight: 600; }
+        .modal-card a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-
 <div class="ms-wrapper">
     <!-- Top Menu Bar -->
     <div class="top-menu-bar">
         <div style="display: flex; align-items: center; gap: 12px;">
+            <!-- Hidden Native File Input -->
+            <input type="file" id="masterImageLoader" accept="image/*" style="display:none;">
             
-            <!-- EXPOSED NATIVE INPUT: Browsers will never block this -->
-            <input type="file" id="masterImageLoader" accept="image/*" class="native-file-btn">
-            
+            <!-- File Menu Dropdown -->
             <div class="menu-dropdown">
-                <button class="menu-btn">Save ▾</button>
+                <button class="menu-btn">File ▾</button>
                 <div class="dropdown-content">
-                    <a id="menuSaveExcel">Save as Excel (.xls)</a>
-                    <a id="menuSaveText">Save as Text (.txt)</a>
+                    <a id="menuUploadBtn">Upload Image (Browse)...</a>
+                    <a id="menuResetAllBtn" style="color:#ff3b30;">Reset Measurements & Calibration</a>
                 </div>
             </div>
             
@@ -213,14 +267,20 @@
                     <a id="menuGridBlack">Color: Black</a>
                 </div>
             </div>
-
-            <button id="menuUndo" class="menu-btn" style="color: #ff3b30;">Undo Action</button>
+            
+            <button id="menuUndo" class="menu-btn" style="color: #ff3b30;" title="Undo Action">↶ Undo</button>
+            <button id="menuRedo" class="menu-btn" style="color: #007AFF;" title="Redo Action">↷ Redo</button>
+            <button id="menuAboutBtn" class="menu-btn">About</button>
         </div>
 
-        <div class="navbar">
-            <button class="nav-btn active" data-target="module-measurement">Measurement Suite</button>
-            <button class="nav-btn" data-target="module-distance">Distance Estimator</button>
-            <button class="nav-btn" data-target="module-metadata">Metadata Extractor</button>
+        <!-- Top Status Indicator -->
+        <div class="top-status-badge">
+            <div class="status-dot" id="topStatusDot"></div>
+            <span id="topStatusText">Status: Upload an image to begin</span>
+        </div>
+
+        <div style="font-weight: 700; font-size: 0.85rem; color: var(--ms-text-muted);">
+            Precision Image Calibrator
         </div>
     </div>
 
@@ -229,8 +289,8 @@
         <button id="ctxDeleteBtn">🗑️ Delete Measurement</button>
     </div>
 
-    <!-- ================= MODULE 1: Measurement & Calibration Suite ================= -->
-    <div id="module-measurement" class="module-view active">
+    <!-- ================= Main Calibration & Analysis Suite ================= -->
+    <div id="module-measurement" class="module-view">
         <div class="main-container">
             <div class="panel canvas-panel">
                 <div class="canvas-container" id="canvasContainer">
@@ -253,97 +313,104 @@
                 </div>
             </div>
 
+            <!-- Scrollable Right Sidebar -->
             <div class="panel right-panel">
-                <h3 style="margin: 0 0 6px 0; font-size: 0.9rem; font-weight: 700;">Measurements & Data</h3>
-                <div class="table-wrapper">
-                    <table id="measurementsTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Length (px)</th>
-                                <th>Length (mm)</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="sidebar-card">
+                    <h4>
+                        Measurements & Data
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn" id="sideSaveExcel" style="padding: 3px 8px; font-size: 0.65rem;">Excel</button>
+                            <button class="btn" id="sideSaveText" style="padding: 3px 8px; font-size: 0.65rem;">Text</button>
+                        </div>
+                    </h4>
+                    <div class="table-wrapper">
+                        <table id="measurementsTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Length (px)</th>
+                                    <th>Length (mm)</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="status-box" id="statusBox" style="margin-top: 4px;">
-                    <strong>Status:</strong> Click the blue <strong>Choose File</strong> button above to begin.
-                </div>
-                <div id="calibrationControlBox" style="margin-top: 4px; display:none; font-size: 0.75rem; background: #fbfbfd; padding: 8px; border-radius: 10px; border: 1px solid var(--ms-border);">
-                    <strong style="color:var(--ms-text-main);">Manual Calibration (mm):</strong>
-                    <div style="display: flex; gap: 6px; margin-top: 4px;">
-                        <input type="number" id="manualCalibMmInput" step="0.1" style="flex:1;" />
+
+                <!-- Unified Manual Calibration Module -->
+                <div class="sidebar-card" id="calibrationControlBox" style="display:none;">
+                    <h4>Manual Calibration (Scale)</h4>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="number" id="manualCalibMmInput" step="0.1" placeholder="Length in mm" style="flex:1;" />
                         <button class="btn" id="updateCalibBtn" style="padding: 4px 10px; font-size: 0.7rem;">Update Scale</button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- ================= MODULE 2: Camera Distance Estimator ================= -->
-    <div id="module-distance" class="module-view">
-        <div class="full-card">
-            <h2 style="margin: 0 0 4px 0; font-size: 1.15rem; font-weight: 800;">Camera Distance Estimator</h2>
-            <p style="color: var(--ms-text-muted); margin: 0 0 10px 0; font-size: 0.8rem;">Estimate focal distance based on EXIF attributes and known geometric width.</p>
-            
-            <div class="dist-controls">
-                <div class="dist-control">
-                    <label>Real object width (m)</label>
-                    <input type="number" id="realWidth" value="0.20" step="0.01">
-                </div>
-                <div class="dist-control">
-                    <button class="btn" id="resetBtn2" style="padding: 6px 12px;">Reset points</button>
-                </div>
-            </div>
-            
-            <div style="color: var(--ms-text-muted); font-size: 0.75rem; margin-bottom: 6px; font-weight: 500;">
-                Click two points matching the known object width.
-            </div>
-            
-            <div style="display:flex; justify-content:center; flex:1; min-height:0; position:relative; overflow:hidden; background:#fbfbfd; border:1px solid var(--ms-border); border-radius:12px;">
-                <canvas id="canvasDist" style="max-height:100%; object-fit:contain; cursor:crosshair;"></canvas>
-            </div>
-
-            <div style="margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px;">
-                <div class="stat-box">
-                    <div class="stat-label">Focal length (detected)</div>
-                    <div class="stat-value" id="focalValue">—</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Pixel width</div>
-                    <div class="stat-value" id="pixelValue">—</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Estimated distance</div>
-                    <div class="stat-value" id="distanceValue">—</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= MODULE 3: Image Metadata Extractor ================= -->
-    <div id="module-metadata" class="module-view">
-        <div class="full-card">
-            <div class="results-grid" id="resultsArea3" style="display: grid;">
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <div style="background:#fbfbfd; padding:10px; border-radius:12px; border:1px solid var(--ms-border); text-align:center;">
-                        <h3 style="font-size:0.85rem; margin:0 0 6px 0; color:var(--ms-accent); font-weight:700;">Preview</h3>
-                        <img id="preview3" class="preview-img" alt="Preview">
+                <!-- Camera Distance Estimator Sidebar Module -->
+                <div class="sidebar-card" id="distanceEstBox" style="display:none;">
+                    <h4>Camera Distance Estimation</h4>
+                    <div class="sidebar-grid">
+                        <div class="meta-item">
+                            <div class="meta-item-label">Focal Length</div>
+                            <div class="meta-item-val" id="distBoxFocal">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Est. Distance</div>
+                            <div class="meta-item-val" id="distBoxVal" style="color: var(--ms-accent); font-weight: 800;">—</div>
+                        </div>
                     </div>
-                    <div style="background:#fbfbfd; padding:10px; border-radius:12px; border:1px solid var(--ms-border); overflow-y:auto; max-height:160px;">
-                        <h3 style="font-size:0.85rem; margin:0 0 6px 0; color:var(--ms-accent); font-weight:700;">File Properties</h3>
-                        <table id="basicInfoTable"></table>
+                    <div style="font-size: 0.68rem; color: var(--ms-text-muted); line-height: 1.2;">
+                        Calculated from calibration scale & camera EXIF focal parameters.
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:380px;">
-                    <div style="background:#fbfbfd; padding:10px; border-radius:12px; border:1px solid var(--ms-border);">
-                        <h3 style="font-size:0.85rem; margin:0 0 8px 0; color:var(--ms-accent); font-weight:700;">Camera & Lens Details</h3>
-                        <div class="highlight-grid" id="lensHighlights"></div>
-                    </div>
-                    <div style="background:#fbfbfd; padding:10px; border-radius:12px; border:1px solid var(--ms-border);">
-                        <h3 style="font-size:0.85rem; margin:0 0 6px 0; color:var(--ms-accent); font-weight:700;">Raw EXIF Data</h3>
-                        <table id="exifTable"></table>
+
+                <!-- Photo Metadata Summary Box -->
+                <div class="sidebar-card" id="miniMetadataBox">
+                    <h4>
+                        Photo Metadata
+                        <button class="btn" id="saveFullMetaBtn" style="padding: 3px 8px; font-size: 0.65rem;">Save Full (.txt)</button>
+                    </h4>
+                    <div class="sidebar-grid">
+                        <div class="meta-item full-width">
+                            <div class="meta-item-label">File Name</div>
+                            <div class="meta-item-val" id="miniMetaFileName">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">File Size</div>
+                            <div class="meta-item-val" id="miniMetaFileSize">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Resolution</div>
+                            <div class="meta-item-val" id="miniMetaDimensions">—</div>
+                        </div>
+                        <div class="meta-item full-width">
+                            <div class="meta-item-label">Date & Time Taken</div>
+                            <div class="meta-item-val" id="miniMetaDate">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Camera</div>
+                            <div class="meta-item-val" id="miniMetaCamera">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Lens</div>
+                            <div class="meta-item-val" id="miniMetaLens">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Focal Length (Film)</div>
+                            <div class="meta-item-val" id="miniMetaFocal">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Aperture</div>
+                            <div class="meta-item-val" id="miniMetaAperture">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">Shutter Speed</div>
+                            <div class="meta-item-val" id="miniMetaShutter">—</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-item-label">ISO</div>
+                            <div class="meta-item-val" id="miniMetaISO">—</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -351,32 +418,67 @@
     </div>
 </div>
 
+<!-- About Popup Modal -->
+<div class="modal-overlay" id="aboutModal">
+    <div class="modal-card">
+        <h3>Precision Image Calibrator</h3>
+        <p>Created by <strong>Milad Soltanalipour</strong></p>
+        <p><a href="https://miladsoltanalipour.com" target="_blank">miladsoltanalipour.com</a></p>
+        <p style="font-size: 0.75rem; margin-top: 10px; color: var(--ms-text-muted);">© 2026 All Rights Reserved.</p>
+        <button class="btn" id="closeAboutBtn" style="margin-top: 12px; padding: 6px 16px;">Close</button>
+    </div>
+</div>
+
 <script>
     let globalFile = null;
     let globalImageBuffer = null;
+    let rawExifTags = {};
     let masterImg = new Image();
-
     const masterLoader = document.getElementById('masterImageLoader');
 
-    /* ================= NAVIGATION LOGIC ================= */
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const moduleViews = document.querySelectorAll('.module-view');
+    /* Default Grid Style */
+    const DEFAULT_GRID_STYLE = "rgba(100, 116, 139, 0.35)";
 
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            navButtons.forEach(b => b.classList.remove('active'));
-            moduleViews.forEach(v => v.classList.remove('active'));
-            
-            btn.classList.add('active');
-            const targetId = btn.getAttribute('data-target');
-            document.getElementById(targetId).classList.add('active');
-
-            if (globalFile) {
-                if (targetId === 'module-measurement') resizeAndRedrawCanvas1();
-                if (targetId === 'module-distance') redrawDist();
-            }
-        });
+    /* Menu & File triggers */
+    document.getElementById('menuUploadBtn').addEventListener('click', () => masterLoader.click());
+    document.getElementById('menuResetAllBtn').addEventListener('click', () => {
+        if (!masterImg.src) return;
+        if (confirm("Reset all measurements and calibration for this image?")) {
+            resetMeasurementsAndCalib();
+        }
     });
+
+    document.getElementById('menuAboutBtn').addEventListener('click', () => {
+        document.getElementById('aboutModal').style.display = 'flex';
+    });
+    document.getElementById('closeAboutBtn').addEventListener('click', () => {
+        document.getElementById('aboutModal').style.display = 'none';
+    });
+
+    function updateTopStatus(message, isCalibrated = false) {
+        document.getElementById('topStatusText').innerHTML = message;
+        const dot = document.getElementById('topStatusDot');
+        if (isCalibrated) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    }
+
+    function resetMeasurementsAndCalib() {
+        measurements1 = [];
+        calibrationLine1 = null;
+        isCalibrated1 = false;
+        pixelsPerMm1 = null;
+        actionHistory1 = [];
+        redoHistory1 = [];
+        updateTable1();
+        updateCameraDistanceDisplay();
+        document.getElementById('calibrationControlBox').style.display = 'none';
+        axisToolbarGroup.style.display = 'none';
+        updateTopStatus('Image loaded. Draw <strong>calibration line</strong>.', false);
+        redrawCanvas1();
+    }
 
     /* ================= MASTER LOADER EVENT ================= */
     masterLoader.addEventListener('change', async (e) => {
@@ -384,8 +486,8 @@
         if (!file) return;
         globalFile = file;
         globalImageBuffer = await file.arrayBuffer();
-
         const url = URL.createObjectURL(file);
+
         masterImg.onload = function() {
             canvas1.width = container1.clientWidth;
             canvas1.height = container1.clientHeight;
@@ -394,102 +496,103 @@
             scale1 = Math.min(hRatio, vRatio, 1);
             panX1 = (container1.clientWidth - masterImg.width * scale1) / 2;
             panY1 = (container1.clientHeight - masterImg.height * scale1) / 2;
-
             customGridStepPx = Math.max(50, Math.round(masterImg.width / 10));
             updateGridStepDisplay();
-
             redrawCanvas1();
-            statusBox1.innerHTML = `<strong>Status:</strong> Image loaded. Draw your <strong>calibration line</strong>.`;
-            document.getElementById('calibrationControlBox').style.display = 'none';
-            measurements1 = [];
-            calibrationLine1 = null;
-            isCalibrated1 = false;
-            pixelsPerMm1 = null;
-            actionHistory1 = [];
-            updateTable1();
-
-            canvasDist.width = masterImg.width;
-            canvasDist.height = masterImg.height;
-            const focal35 = getExifFocal(globalImageBuffer);
-            if(focal35){
-                focalPixelsDist = focal35/36 * masterImg.width;
-                focalValue2.textContent = `${focalPixelsDist.toFixed(0)} px (${focal35} mm equiv.)`;
-            }else{
-                focalPixelsDist = masterImg.width * 0.8;
-                focalValue2.textContent = `${focalPixelsDist.toFixed(0)} px (approx.)`;
-            }
-            pointsDist = [];
-            pixelValue2.textContent = '—';
-            distanceValue2.textContent = '—';
-            redrawDist();
-
-            document.getElementById('preview3').src = url;
-            const basicInfoHTML = `
-                <tr><th>File Name</th><td>${file.name}</td></tr>
-                <tr><th>File Size</th><td>${(file.size / 1024 / 1024).toFixed(2)} MB</td></tr>
-                <tr><th>File Type</th><td>${file.type}</td></tr>
-                <tr><th>Last Modified</th><td>${new Date(file.lastModified).toLocaleString()}</td></tr>
-            `;
-            document.getElementById('basicInfoTable').innerHTML = basicInfoHTML;
             
+            resetMeasurementsAndCalib();
+
+            // Update Metadata Sidebar Info
+            document.getElementById('miniMetaFileName').textContent = file.name;
+            const formattedSize = file.size >= 1048576 
+                ? (file.size / 1048576).toFixed(2) + ' MB' 
+                : (file.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('miniMetaFileSize').textContent = formattedSize;
+            document.getElementById('miniMetaDimensions').textContent = `${masterImg.width} × ${masterImg.height} px`;
+
             EXIF.getData(file, function() {
-                const allTags = EXIF.getAllTags(this);
-                const highlightContainer = document.getElementById('lensHighlights');
-                const exifTable = document.getElementById('exifTable');
-                highlightContainer.innerHTML = '';
-                exifTable.innerHTML = '';
-                
-                if (Object.keys(allTags).length === 0) {
-                    highlightContainer.innerHTML = '<div style="color: var(--ms-text-muted); grid-column: 1/-1; font-size:0.75rem;">No EXIF data found.</div>';
-                    exifTable.innerHTML = '<tr><td>No data available.</td></tr>';
-                    return;
-                }
-                
+                rawExifTags = EXIF.getAllTags(this);
+
                 const formatFNumber = (val) => val ? `f/${val}` : 'N/A';
-                const formatFocal = (val) => val ? `${val} mm` : 'N/A';
                 const formatExposure = (val) => {
                     if (!val) return 'N/A';
                     if (val < 1) return `1/${Math.round(1/val)}s`;
                     return `${val}s`;
                 };
-                
-                const highlights = [
-                    { label: 'Camera Make', value: allTags.Make || 'Unknown' },
-                    { label: 'Camera Model', value: allTags.Model || 'Unknown' },
-                    { label: 'Lens Model', value: allTags.LensModel || 'Not Specified' },
-                    { label: 'Focal Length', value: formatFocal(allTags.FocalLength) },
-                    { label: 'Aperture', value: formatFNumber(allTags.FNumber) },
-                    { label: 'Shutter Speed', value: formatExposure(allTags.ExposureTime) },
-                    { label: 'ISO', value: allTags.ISOSpeedRatings || 'N/A' },
-                    { label: 'Date Taken', value: allTags.DateTimeOriginal || 'N/A' }
-                ];
-                
-                highlights.forEach(item => {
-                    highlightContainer.innerHTML += `
-                        <div class="stat-box">
-                            <div class="stat-label">${item.label}</div>
-                            <div class="stat-value" style="-webkit-text-fill-color: var(--ms-text-main); font-size:0.8rem;">${item.value}</div>
-                        </div>
-                    `;
-                });
-                
-                const excludedTags = ['MakerNote', 'UserComment', 'thumbnail'];
-                for (let tag in allTags) {
-                    if (excludedTags.includes(tag)) continue;
-                    let val = allTags[tag];
-                    if (typeof val === 'object') { val = val.toString(); }
-                    exifTable.innerHTML += `<tr><th>${tag}</th><td>${val}</td></tr>`;
+
+                let formattedDate = 'N/A';
+                if (rawExifTags.DateTimeOriginal || rawExifTags.DateTime) {
+                    let dtStr = rawExifTags.DateTimeOriginal || rawExifTags.DateTime;
+                    let parts = dtStr.split(' ');
+                    if (parts.length === 2) {
+                        let dateParts = parts[0].replace(/:/g, '-');
+                        let parsedDate = new Date(`${dateParts}T${parts[1]}`);
+                        if (!isNaN(parsedDate)) {
+                            formattedDate = parsedDate.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) + ' at ' + parts[1];
+                        } else {
+                            formattedDate = dtStr;
+                        }
+                    } else {
+                        formattedDate = dtStr;
+                    }
+                } else if (file.lastModified) {
+                    formattedDate = new Date(file.lastModified).toLocaleString();
                 }
+
+                let focalText = 'N/A';
+                if (rawExifTags.FocalLengthIn35mmFilm) {
+                    focalText = `${rawExifTags.FocalLengthIn35mmFilm} mm (35mm eq.)`;
+                } else if (rawExifTags.FocalLength) {
+                    focalText = `${rawExifTags.FocalLength} mm`;
+                }
+
+                document.getElementById('miniMetaDate').textContent = formattedDate;
+                document.getElementById('miniMetaCamera').textContent = rawExifTags.Model || rawExifTags.Make || 'Unknown';
+                document.getElementById('miniMetaLens').textContent = rawExifTags.LensModel || 'N/A';
+                document.getElementById('miniMetaFocal').textContent = focalText;
+                document.getElementById('miniMetaAperture').textContent = formatFNumber(rawExifTags.FNumber);
+                document.getElementById('miniMetaShutter').textContent = formatExposure(rawExifTags.ExposureTime);
+                document.getElementById('miniMetaISO').textContent = rawExifTags.ISOSpeedRatings || 'N/A';
+
+                updateCameraDistanceDisplay();
             });
         };
         masterImg.src = url;
     });
 
-    /* ================= MODULE 1 SCRIPT ================= */
+    /* ================= SAVE FULL METADATA (.TXT) ================= */
+    document.getElementById('saveFullMetaBtn').addEventListener('click', () => {
+        if (!globalFile) {
+            alert("Please upload an image first.");
+            return;
+        }
+        let txt = "Property\tValue\r\n";
+        txt += `File Name\t${globalFile.name}\r\n`;
+        txt += `File Size\t${(globalFile.size / 1024 / 1024).toFixed(2)} MB (${globalFile.size} bytes)\r\n`;
+        txt += `File Type\t${globalFile.type}\r\n`;
+        txt += `Image Resolution\t${masterImg.width} x ${masterImg.height} pixels\r\n`;
+        txt += `Last Modified\t${new Date(globalFile.lastModified).toLocaleString()}\r\n\r\n`;
+
+        txt += "EXIF Tag\tValue\r\n";
+        if (rawExifTags && Object.keys(rawExifTags).length > 0) {
+            const excludedTags = ['MakerNote', 'UserComment', 'thumbnail'];
+            for (let tag in rawExifTags) {
+                if (excludedTags.includes(tag)) continue;
+                let val = rawExifTags[tag];
+                if (typeof val === 'object') { val = JSON.stringify(val); }
+                txt += `${tag}\t${val}\r\n`;
+            }
+        } else {
+            txt += "No raw EXIF metadata available.\r\n";
+        }
+
+        downloadFile(txt, `${globalFile.name}_metadata.txt`, "text/plain");
+    });
+
+    /* ================= MAIN CANVAS & CALIBRATION SCRIPT ================= */
     const canvas1 = document.getElementById('imageCanvas');
     const ctx1 = canvas1.getContext('2d');
     const container1 = document.getElementById('canvasContainer');
-    const statusBox1 = document.getElementById('statusBox');
     const toggleGrid1 = document.getElementById('toggleGrid');
     const fadeBtn = document.getElementById('fadeBtn');
     const axisMmBtn = document.getElementById('axisMmBtn');
@@ -498,40 +601,35 @@
     
     const gridStepDisplay = document.getElementById('gridStepDisplay');
     const contextMenu = document.getElementById('contextMenu');
-
     let isCalibrated1 = false;
     let pixelsPerMm1 = null; 
     let scale1 = 1, panX1 = 0, panY1 = 0;
     let isDragging1 = false, isMiddlePanning = false, startX1, startY1, endX1, endY1;
     
     let isRightDragging = false, rightStartX = 0, rightStartY = 0, rightCurrentX = 0, rightCurrentY = 0;
-
+    let didRightDragZoom = false;
     let measurements1 = [];
     let calibrationLine1 = null;
     let customGridStepPx = 100;
     let isFaded = false;
     let axisInMm = false;
-    let gridColorStyle = "rgba(100, 116, 139, 0.35)";
+    let gridColorStyle = DEFAULT_GRID_STYLE;
     let actionHistory1 = [];
-
+    let redoHistory1 = [];
     const linePalette = [
         "#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", 
         "#5856D6", "#FFCC00", "#5AC8FA", "#4CD964", "#00C7BE"
     ];
     let colorIndexCounter = 0;
-
     function getNextUniqueColor() {
         let color = linePalette[colorIndexCounter % linePalette.length];
         colorIndexCounter++;
         return color;
     }
-
     const calibrationColor = "#FF9500";
-
     let draggingEndpoint = null; 
     let draggingWholeLine = null; 
     let pendingModifiedLine = null;
-
     let selectedLineIndexForCtx = -1;
     let isCalibrationSelectedForCtx = false;
 
@@ -540,13 +638,11 @@
         updateGridStepDisplay();
         redrawCanvas1();
     });
-
     document.getElementById('gridDecBtn').addEventListener('click', () => {
         customGridStepPx = Math.round(customGridStepPx * 1.3);
         updateGridStepDisplay();
         redrawCanvas1();
     });
-
     document.getElementById('menuGridSize').addEventListener('click', () => {
         let val = prompt("Enter grid size interval in pixels or mm:", customGridStepPx);
         if(val !== null && !isNaN(val) && Number(val) > 0) {
@@ -555,36 +651,31 @@
             redrawCanvas1();
         }
     });
-
     document.getElementById('menuGridWhite').addEventListener('click', () => {
         gridColorStyle = "rgba(255, 255, 255, 0.6)";
         redrawCanvas1();
     });
-
     document.getElementById('menuGridBlack').addEventListener('click', () => {
-        gridColorStyle = "rgba(0, 0, 0, 0.4)";
+        gridColorStyle = DEFAULT_GRID_STYLE; // Matches default dark/slate black color
         redrawCanvas1();
     });
-
     fadeBtn.addEventListener('click', () => {
         isFaded = !isFaded;
         fadeBtn.classList.toggle('active', isFaded);
         redrawCanvas1();
     });
-
     axisMmBtn.addEventListener('click', () => {
         axisInMm = !axisInMm;
         axisMmBtn.classList.toggle('active', axisInMm);
         updateGridStepDisplay();
         redrawCanvas1();
     });
-
     document.getElementById('updateCalibBtn').addEventListener('click', () => {
         let newMm = parseFloat(document.getElementById('manualCalibMmInput').value);
         if(!isNaN(newMm) && newMm > 0 && calibrationLine1) {
             calibrationLine1.realMm = newMm;
             pixelsPerMm1 = calibrationLine1.pixelLength / newMm;
-            statusBox1.innerHTML = `<strong>Status:</strong> Calibrated! Scale: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>.`;
+            updateTopStatus(`Calibrated: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>`, true);
             updateAllMeasurementsScale();
             updateGridStepDisplay();
             redrawCanvas1();
@@ -603,10 +694,78 @@
         }
     }
 
+    function getExifFocal(buffer){
+        if (!buffer) return null;
+        const view = new DataView(buffer);
+        if(view.getUint16(0,false)!==0xFFD8) return null;
+        let offset = 2;
+        while(offset < view.byteLength){
+            const marker = view.getUint16(offset,false);
+            offset += 2;
+            if(marker === 0xFFE1){
+                const length = view.getUint16(offset,false);
+                offset += 2;
+                if(view.getUint32(offset,false)!==0x45786966) break;
+                const tiff = offset + 6;
+                const little = view.getUint16(tiff,false)===0x4949;
+                const firstIFD = view.getUint32(tiff+4,little);
+                const dir = tiff + firstIFD;
+                const entries = view.getUint16(dir,little);
+                for(let i=0;i<entries;i++){
+                    const entry = dir + 2 + i*12;
+                    const tag = view.getUint16(entry,little);
+                    if(tag===0x8769){
+                        const exifOffset = view.getUint32(entry+8,little);
+                        const exifDir = tiff + exifOffset;
+                        const exifEntries = view.getUint16(exifDir,little);
+                        for(let j=0;j<exifEntries;j++){
+                            const e = exifDir + 2 + j*12;
+                            const exifTag = view.getUint16(e,little);
+                            if(exifTag===0xA405){
+                                return view.getUint16(e+8,little);
+                            }
+                        }
+                    }
+                }
+            }else{
+                offset += view.getUint16(offset,false);
+            }
+        }
+        return null;
+    }
+
+    function updateCameraDistanceDisplay() {
+        const distBox = document.getElementById('distanceEstBox');
+        const distVal = document.getElementById('distBoxVal');
+        const distFocal = document.getElementById('distBoxFocal');
+
+        if (!masterImg.src || !isCalibrated1 || !calibrationLine1) {
+            distBox.style.display = 'none';
+            return;
+        }
+
+        distBox.style.display = 'flex';
+        let focal35 = rawExifTags.FocalLengthIn35mmFilm || getExifFocal(globalImageBuffer);
+        let focalPixelsDist = 0;
+
+        if (focal35) {
+            focalPixelsDist = (focal35 / 36) * masterImg.width;
+            distFocal.textContent = `${focal35} mm eq.`;
+        } else {
+            focalPixelsDist = masterImg.width * 0.8;
+            distFocal.textContent = `Approx. (No EXIF)`;
+        }
+
+        const realMeters = calibrationLine1.realMm / 1000;
+        const estDistance = (realMeters * focalPixelsDist) / calibrationLine1.pixelLength;
+
+        distVal.textContent = `${estDistance.toFixed(2)} m`;
+    }
+
     document.getElementById('zoomInBtn').addEventListener('click', () => zoomAtCenter1(1.25));
     document.getElementById('zoomOutBtn').addEventListener('click', () => zoomAtCenter1(0.8));
     document.getElementById('zoomResetBtn').addEventListener('click', resetView1);
-
+    
     function resetView1() {
         if (!masterImg.src) return;
         const hRatio = container1.clientWidth / masterImg.width;
@@ -616,11 +775,11 @@
         panY1 = (container1.clientHeight - masterImg.height * scale1) / 2;
         redrawCanvas1();
     }
-
+    
     function zoomAtCenter1(factor) {
         zoomToPoint1(container1.clientWidth / 2, container1.clientHeight / 2, factor);
     }
-
+    
     function zoomToPoint1(x, y, factor) {
         if (!masterImg.src) return;
         const newScale = Math.max(0.1, Math.min(20, scale1 * factor));
@@ -629,7 +788,7 @@
         scale1 = newScale;
         redrawCanvas1();
     }
-
+    
     container1.addEventListener('wheel', (e) => {
         if (!masterImg.src) return;
         e.preventDefault();
@@ -639,7 +798,6 @@
 
     window.addEventListener('click', (e) => {
         contextMenu.style.display = 'none';
-
         if (pendingModifiedLine) {
             const rect = canvas1.getBoundingClientRect();
             const inCanvas = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
@@ -684,15 +842,17 @@
         if (calibrationLine1) {
             calibrationLine1.pixelLength = Math.hypot(calibrationLine1.endX - calibrationLine1.startX, calibrationLine1.endY - calibrationLine1.startY);
             pixelsPerMm1 = calibrationLine1.pixelLength / calibrationLine1.realMm;
-            statusBox1.innerHTML = `<strong>Status:</strong> Calibrated! Scale: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>.`;
+            updateTopStatus(`Calibrated: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>`, true);
         }
         measurements1.forEach(m => {
             m.pixelLength = Math.hypot(m.endX - m.startX, m.endY - m.startY);
             m.lengthMm = m.pixelLength / pixelsPerMm1;
         });
         updateTable1();
+        updateCameraDistanceDisplay();
     }
 
+    /* Undo & Redo System */
     document.getElementById('menuUndo').addEventListener('click', () => {
         if (actionHistory1.length === 0) {
             alert("No actions to undo.");
@@ -700,15 +860,42 @@
         }
         const lastAction = actionHistory1.pop();
         if (lastAction.type === 'measurement') {
-            measurements1.pop();
+            const popped = measurements1.pop();
+            redoHistory1.push({ type: 'measurement', data: popped });
             updateTable1();
         } else if (lastAction.type === 'calibration') {
+            redoHistory1.push({ type: 'calibration', data: { ...calibrationLine1 }, isCalibrated: isCalibrated1, pixelsPerMm: pixelsPerMm1 });
             calibrationLine1 = null;
             isCalibrated1 = false;
             pixelsPerMm1 = null;
-            statusBox1.innerHTML = `<strong>Status:</strong> Calibration removed. Redraw calibration line.`;
+            updateTopStatus(`Calibration removed. Redraw calibration line.`, false);
             document.getElementById('calibrationControlBox').style.display = 'none';
             axisToolbarGroup.style.display = 'none';
+            updateCameraDistanceDisplay();
+        }
+        redrawCanvas1();
+    });
+
+    document.getElementById('menuRedo').addEventListener('click', () => {
+        if (redoHistory1.length === 0) {
+            alert("No actions to redo.");
+            return;
+        }
+        const nextAction = redoHistory1.pop();
+        if (nextAction.type === 'measurement') {
+            measurements1.push(nextAction.data);
+            actionHistory1.push({ type: 'measurement' });
+            updateTable1();
+        } else if (nextAction.type === 'calibration') {
+            calibrationLine1 = nextAction.data;
+            isCalibrated1 = nextAction.isCalibrated;
+            pixelsPerMm1 = nextAction.pixelsPerMm;
+            updateTopStatus(`Calibrated: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>`, true);
+            document.getElementById('calibrationControlBox').style.display = 'flex';
+            document.getElementById('manualCalibMmInput').value = calibrationLine1.realMm;
+            axisToolbarGroup.style.display = 'block';
+            updateAllMeasurementsScale();
+            actionHistory1.push({ type: 'calibration' });
         }
         redrawCanvas1();
     });
@@ -723,11 +910,11 @@
 
         if (e.button === 2) {
             isRightDragging = true;
+            didRightDragZoom = false;
             rightStartX = cx; rightStartY = cy;
             rightCurrentX = cx; rightCurrentY = cy;
             return;
         }
-
         if (e.button === 1) {
             isMiddlePanning = true;
             startX1 = e.clientX; startY1 = e.clientY;
@@ -735,14 +922,8 @@
             return;
         }
 
-        if (e.shiftKey) {
-            isDragging1 = true; startX1 = e.clientX; startY1 = e.clientY;
-            return;
-        }
-
         const hitRadius = 22 / scale1;
         let clickedEndpoint = false;
-
         if (calibrationLine1) {
             if (Math.hypot(imgCoords.x - calibrationLine1.startX, imgCoords.y - calibrationLine1.startY) < hitRadius) {
                 draggingEndpoint = { type: 'calib', point: 'start' };
@@ -752,7 +933,6 @@
                 clickedEndpoint = true;
             }
         }
-
         if (!clickedEndpoint) {
             for (let i = 0; i < measurements1.length; i++) {
                 let m = measurements1[i];
@@ -767,13 +947,11 @@
                 }
             }
         }
-
         if (clickedEndpoint) {
             if (pendingModifiedLine && 
                 !(pendingModifiedLine.type === draggingEndpoint.type && (pendingModifiedLine.index === draggingEndpoint.index || (pendingModifiedLine.type === 'calib' && draggingEndpoint.type === 'calib')))) {
                 triggerOverwritePopup();
             }
-
             if (!pendingModifiedLine) {
                 if (draggingEndpoint.type === 'calib') {
                     pendingModifiedLine = { type: 'calib', oldStart: {x: calibrationLine1.startX, y: calibrationLine1.startY}, oldEnd: {x: calibrationLine1.endX, y: calibrationLine1.endY}, oldLen: calibrationLine1.pixelLength };
@@ -785,7 +963,6 @@
             isDragging1 = true;
             return;
         }
-
         const segmentThreshold = 10 / scale1;
         let clickedLineBody = false;
         if (calibrationLine1 && distToSegment(imgCoords, {x: calibrationLine1.startX, y: calibrationLine1.startY}, {x: calibrationLine1.endX, y: calibrationLine1.endY}) < segmentThreshold) {
@@ -801,16 +978,13 @@
                 }
             }
         }
-
         if (clickedLineBody) {
             isDragging1 = true;
             return;
         }
-
         if (pendingModifiedLine) {
             triggerOverwritePopup();
         }
-
         isDragging1 = true;
         startX1 = imgCoords.x; startY1 = imgCoords.y; endX1 = imgCoords.x; endY1 = imgCoords.y;
     });
@@ -827,7 +1001,7 @@
             ctx1.save();
             ctx1.strokeStyle = "#007AFF";
             ctx1.lineWidth = 2;
-            ctx1.fillStyle = "rgba(0, 122, 255, 0.1)";
+            ctx1.fillStyle = "rgba(0, 122, 255, 0.15)";
             let boxX = Math.min(rightStartX, rightCurrentX);
             let boxY = Math.min(rightStartY, rightCurrentY);
             let boxW = Math.abs(rightCurrentX - rightStartX);
@@ -859,7 +1033,7 @@
 
         if (!isDragging1 && !isMiddlePanning) return;
 
-        if (isMiddlePanning || e.shiftKey) {
+        if (isMiddlePanning) {
             panX1 += e.clientX - startX1; panY1 += e.clientY - startY1;
             startX1 = e.clientX; startY1 = e.clientY;
             redrawCanvas1();
@@ -868,9 +1042,25 @@
 
         if (draggingEndpoint) {
             canvas1.style.cursor = 'grabbing';
+            let curX = imgCoords.x;
+            let curY = imgCoords.y;
+
             if (draggingEndpoint.type === 'calib') {
-                if (draggingEndpoint.point === 'start') { calibrationLine1.startX = imgCoords.x; calibrationLine1.startY = imgCoords.y; }
-                else { calibrationLine1.endX = imgCoords.x; calibrationLine1.endY = imgCoords.y; }
+                if (draggingEndpoint.point === 'start') {
+                    if (e.shiftKey) {
+                        let dx = Math.abs(curX - calibrationLine1.endX);
+                        let dy = Math.abs(curY - calibrationLine1.endY);
+                        if (dx > dy) curY = calibrationLine1.endY; else curX = calibrationLine1.endX;
+                    }
+                    calibrationLine1.startX = curX; calibrationLine1.startY = curY;
+                } else {
+                    if (e.shiftKey) {
+                        let dx = Math.abs(curX - calibrationLine1.startX);
+                        let dy = Math.abs(curY - calibrationLine1.startY);
+                        if (dx > dy) curY = calibrationLine1.startY; else curX = calibrationLine1.startX;
+                    }
+                    calibrationLine1.endX = curX; calibrationLine1.endY = curY;
+                }
                 const dx = calibrationLine1.endX - calibrationLine1.startX;
                 const dy = calibrationLine1.endY - calibrationLine1.startY;
                 calibrationLine1.pixelLength = Math.sqrt(dx*dx + dy*dy);
@@ -878,8 +1068,21 @@
                 updateAllMeasurementsScale();
             } else if (draggingEndpoint.type === 'meas') {
                 let m = measurements1[draggingEndpoint.index];
-                if (draggingEndpoint.point === 'start') { m.startX = imgCoords.x; m.startY = imgCoords.y; }
-                else { m.endX = imgCoords.x; m.endY = imgCoords.y; }
+                if (draggingEndpoint.point === 'start') {
+                    if (e.shiftKey) {
+                        let dx = Math.abs(curX - m.endX);
+                        let dy = Math.abs(curY - m.endY);
+                        if (dx > dy) curY = m.endY; else curX = m.endX;
+                    }
+                    m.startX = curX; m.startY = curY;
+                } else {
+                    if (e.shiftKey) {
+                        let dx = Math.abs(curX - m.startX);
+                        let dy = Math.abs(curY - m.startY);
+                        if (dx > dy) curY = m.startY; else curX = m.startX;
+                    }
+                    m.endX = curX; m.endY = curY;
+                }
                 m.pixelLength = Math.hypot(m.endX - m.startX, m.endY - m.startY);
                 if (pixelsPerMm1) {
                     m.lengthMm = m.pixelLength / pixelsPerMm1;
@@ -895,7 +1098,6 @@
             const deltaX = imgCoords.x - draggingWholeLine.startMouse.x;
             const deltaY = imgCoords.y - draggingWholeLine.startMouse.y;
             draggingWholeLine.startMouse = imgCoords;
-
             if (draggingWholeLine.type === 'calib') {
                 calibrationLine1.startX += deltaX; calibrationLine1.startY += deltaY;
                 calibrationLine1.endX += deltaX; calibrationLine1.endY += deltaY;
@@ -909,36 +1111,66 @@
             return;
         }
 
-        endX1 = imgCoords.x; endY1 = imgCoords.y;
-        redrawCanvas1();
+        let targetX = imgCoords.x;
+        let targetY = imgCoords.y;
+        if (e.shiftKey) {
+            let dx = Math.abs(targetX - startX1);
+            let dy = Math.abs(targetY - startY1);
+            if (dx > dy) {
+                targetY = startY1; 
+            } else {
+                targetX = startX1; 
+            }
+        }
+        endX1 = targetX; 
+        endY1 = targetY;
         
-        let previewColor = !isCalibrated1 ? calibrationColor : linePalette[measurements1.length % linePalette.length];
+        redrawCanvas1();
+        let previewColor = !isCalibrated1 ? calibrationColor : linePalette[colorIndexCounter % linePalette.length];
         drawTempLine1(startX1, startY1, endX1, endY1, previewColor);
     });
 
     canvas1.addEventListener('mouseup', (e) => {
+        /* AutoCAD-Style Right Click Animated Box Zoom */
         if (e.button === 2 && isRightDragging) {
             isRightDragging = false;
-            let dx = Math.abs(rightCurrentX - rightStartX);
-            let dy = Math.abs(rightCurrentY - rightStartY);
-            if (dx > 10 && dy > 10) {
+            let boxW = Math.abs(rightCurrentX - rightStartX);
+            let boxH = Math.abs(rightCurrentY - rightStartY);
+            
+            if (boxW > 8 && boxH > 8) {
+                didRightDragZoom = true;
                 let boxXMin = Math.min(rightStartX, rightCurrentX);
                 let boxYMin = Math.min(rightStartY, rightCurrentY);
-                let boxW = Math.abs(rightCurrentX - rightStartX);
-                let boxH = Math.abs(rightCurrentY - rightStartY);
-
                 let imgBoxX = (boxXMin - panX1) / scale1;
                 let imgBoxY = (boxYMin - panY1) / scale1;
                 let imgBoxW = boxW / scale1;
                 let imgBoxH = boxH / scale1;
 
-                let ratioX = canvas1.width / imgBoxW;
-                let ratioY = canvas1.height / imgBoxH;
-                let newScale = scale1 * Math.min(ratioX, ratioY);
+                let targetScale = Math.min(20, scale1 * Math.min(canvas1.width / boxW, canvas1.height / boxH));
+                let targetPanX = (canvas1.width / 2) - (imgBoxX + imgBoxW / 2) * targetScale;
+                let targetPanY = (canvas1.height / 2) - (imgBoxY + imgBoxH / 2) * targetScale;
 
-                panX1 = (canvas1.width / 2) - (imgBoxX + imgBoxW / 2) * newScale;
-                panY1 = (canvas1.height / 2) - (imgBoxY + imgBoxH / 2) * newScale;
-                scale1 = newScale;
+                let startPanX = panX1, startPanY = panY1, startScale = scale1;
+                let startTime = performance.now();
+                let duration = 180; // Smooth 180ms quick zoom animation
+
+                function animateZoom(time) {
+                    let elapsed = time - startTime;
+                    let progress = Math.min(1, elapsed / duration);
+                    let ease = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+
+                    panX1 = startPanX + (targetPanX - startPanX) * ease;
+                    panY1 = startPanY + (targetPanY - startPanY) * ease;
+                    scale1 = startScale + (targetScale - startScale) * ease;
+
+                    redrawCanvas1();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateZoom);
+                    }
+                }
+                requestAnimationFrame(animateZoom);
+            } else {
                 redrawCanvas1();
             }
             return;
@@ -950,20 +1182,18 @@
         if (!isDragging1) return;
         isDragging1 = false;
         canvas1.style.cursor = 'crosshair';
-
         if (draggingEndpoint) {
             draggingEndpoint = null;
             return;
         }
-
         if (draggingWholeLine) {
             draggingWholeLine = null;
             return;
         }
-
         const pixelLength = Math.hypot(endX1 - startX1, endY1 - startY1);
         if (pixelLength < 3) return;
 
+        redoHistory1 = []; 
         if (!isCalibrated1) {
             let userInput = prompt("Enter the real-world length of this calibration line in millimeters (mm):", "100");
             if (userInput === null || isNaN(userInput) || Number(userInput) <= 0) { 
@@ -973,12 +1203,13 @@
             pixelsPerMm1 = pixelLength / parseFloat(userInput);
             isCalibrated1 = true;
             calibrationLine1 = { startX: startX1, startY: startY1, endX: endX1, endY: endY1, pixelLength, realMm: parseFloat(userInput) };
-            statusBox1.innerHTML = `<strong>Status:</strong> Calibrated! Scale: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>.`;
-            document.getElementById('calibrationControlBox').style.display = 'block';
+            updateTopStatus(`Calibrated: <strong>${pixelsPerMm1.toFixed(2)} px/mm</strong>`, true);
+            document.getElementById('calibrationControlBox').style.display = 'flex';
             document.getElementById('manualCalibMmInput').value = parseFloat(userInput);
             axisToolbarGroup.style.display = 'block';
             updateAllMeasurementsScale();
             updateGridStepDisplay();
+            updateCameraDistanceDisplay();
             actionHistory1.push({ type: 'calibration' });
         } else {
             const assignedColor = getNextUniqueColor();
@@ -1000,7 +1231,6 @@
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
         const imgCoords = { x: (cx - panX1) / scale1, y: (cy - panY1) / scale1 };
-
         const threshold = 15 / scale1;
         for (let i = 0; i < measurements1.length; i++) {
             let m = measurements1[i];
@@ -1020,21 +1250,23 @@
 
     canvas1.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        if (didRightDragZoom) {
+            didRightDragZoom = false;
+            return; // Suppress context menu if a right-drag zoom was performed
+        }
+
         const rect = canvas1.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
         const imgCoords = { x: (cx - panX1) / scale1, y: (cy - panY1) / scale1 };
-
         const threshold = 10 / scale1;
         selectedLineIndexForCtx = -1;
         isCalibrationSelectedForCtx = false;
-
         if (calibrationLine1) {
             if (distToSegment(imgCoords, {x: calibrationLine1.startX, y: calibrationLine1.startY}, {x: calibrationLine1.endX, y: calibrationLine1.endY}) < threshold) {
                 isCalibrationSelectedForCtx = true;
             }
         }
-
         if (!isCalibrationSelectedForCtx) {
             for (let i = 0; i < measurements1.length; i++) {
                 let m = measurements1[i];
@@ -1044,7 +1276,6 @@
                 }
             }
         }
-
         if (isCalibrationSelectedForCtx || selectedLineIndexForCtx !== -1) {
             contextMenu.style.display = 'block';
             contextMenu.style.left = `${e.pageX}px`;
@@ -1058,9 +1289,10 @@
             calibrationLine1 = null;
             isCalibrated1 = false;
             pixelsPerMm1 = null;
-            statusBox1.innerHTML = `<strong>Status:</strong> Calibration removed. Redraw calibration line.`;
+            updateTopStatus(`Calibration removed. Redraw calibration line.`, false);
             document.getElementById('calibrationControlBox').style.display = 'none';
             axisToolbarGroup.style.display = 'none';
+            updateCameraDistanceDisplay();
         } else if (selectedLineIndexForCtx !== -1) {
             measurements1.splice(selectedLineIndexForCtx, 1);
             updateTable1();
@@ -1072,7 +1304,7 @@
     function distToSegment(p, p1, p2) {
         const l2 = (p2.x - p1.x)*(p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y);
         if (l2 === 0) return Math.hypot(p.x - p1.x, p.y - p1.y);
-        let t =((p.x - p1.x)*(p2.x - p1.x) + (p.y - p1.y)*(p2.y - p1.y)) / l2;
+        let t = ((p.x - p1.x)*(p2.x - p1.x) + (p.y - p1.y)*(p2.y - p1.y)) / l2;
         t = Math.max(0, Math.min(1, t));
         return Math.hypot(p.x - (p1.x + t*(p2.x - p1.x)), p.y - (p1.y + t*(p2.y - p1.y)));
     }
@@ -1088,7 +1320,6 @@
         canvas1.height = container1.clientHeight;
         redrawCanvas1();
     }
-
     canvas1.width = 600; canvas1.height = 600;
 
     function redrawCanvas1() {
@@ -1102,7 +1333,6 @@
         ctx1.save();
         ctx1.translate(panX1, panY1);
         ctx1.scale(scale1, scale1);
-
         if (isFaded) {
             ctx1.fillStyle = "#ffffff";
             ctx1.fillRect(0, 0, masterImg.width, masterImg.height);
@@ -1112,13 +1342,11 @@
         } else {
             ctx1.drawImage(masterImg, 0, 0);
         }
-
         if (toggleGrid1.checked) {
             drawGrid1();
         }
-
         if (calibrationLine1) {
-            let calMmLabel = pixelsPerMm1 ? `Calibration (${calibrationLine1.realMm}mm): ${(calibrationLine1.pixelLength / pixelsPerMm1).toFixed(1)} mm` : `Calibration: ${calibrationLine1.pixelLength.toFixed(1)} px`;
+            let calMmLabel = pixelsPerMm1 ? `Calibration: ${calibrationLine1.realMm.toFixed(1)} mm` : `Calibration: ${calibrationLine1.pixelLength.toFixed(1)} px`;
             drawLine1(calibrationLine1.startX, calibrationLine1.startY, calibrationLine1.endX, calibrationLine1.endY, calibrationColor, calMmLabel);
         }
         measurements1.forEach((m) => {
@@ -1127,33 +1355,40 @@
             drawLine1(m.startX, m.startY, m.endX, m.endY, lineColor, mmLabel);
         });
         ctx1.restore();
-
         if (toggleGrid1.checked) {
             drawExternalAxes();
         }
     }
 
+    /* Solid line live preview matching final line appearance */
     function drawTempLine1(x1, y1, x2, y2, lineColor) {
         ctx1.save();
         ctx1.translate(panX1, panY1);
         ctx1.scale(scale1, scale1);
         
         ctx1.strokeStyle = lineColor;
+        ctx1.fillStyle = lineColor;
         ctx1.lineWidth = 4 / scale1;
-        ctx1.setLineDash([6 / scale1, 6 / scale1]);
+        
         ctx1.beginPath(); 
         ctx1.moveTo(x1, y1); 
         ctx1.lineTo(x2, y2); 
         ctx1.stroke();
 
+        const radius = 6 / scale1;
+        ctx1.lineWidth = 2 / scale1;
+        ctx1.strokeStyle = "#ffffff";
+        ctx1.fillStyle = lineColor;
+        
+        ctx1.beginPath(); ctx1.arc(x1, y1, radius, 0, 2 * Math.PI); ctx1.fill(); ctx1.stroke();
+        ctx1.beginPath(); ctx1.arc(x2, y2, radius, 0, 2 * Math.PI); ctx1.fill(); ctx1.stroke();
+
         const pxLen = Math.hypot(x2 - x1, y2 - y1);
         const liveLabel = pixelsPerMm1 ? `${(pxLen / pixelsPerMm1).toFixed(1)} mm` : `${pxLen.toFixed(1)} px`;
         const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
         ctx1.font = `bold ${Math.max(11, 14 / scale1)}px sans-serif`;
-        ctx1.fillStyle = lineColor; ctx1.strokeStyle = "#ffffff"; ctx1.lineWidth = 3 / scale1;
-        ctx1.strokeText(liveLabel, midX + (6 / scale1), midY - (6 / scale1));
+        ctx1.fillStyle = lineColor;
         ctx1.fillText(liveLabel, midX + (6 / scale1), midY - (6 / scale1));
-
         ctx1.restore();
     }
 
@@ -1190,19 +1425,16 @@
         ctx1.save();
         ctx1.strokeStyle = gridColorStyle;
         ctx1.lineWidth = 1.5 / scale1;
-
         let stepPx = customGridStepPx;
         while ((stepPx * scale1) < 35) {
             stepPx *= 2;
         }
-
         for (let x = 0; x <= masterImg.width; x += stepPx) {
             ctx1.beginPath(); 
             ctx1.moveTo(x, 0); 
             ctx1.lineTo(x, masterImg.height); 
             ctx1.stroke();
         }
-
         for (let y = 0; y <= masterImg.height; y += stepPx) {
             ctx1.beginPath(); 
             ctx1.moveTo(0, y); 
@@ -1217,24 +1449,20 @@
         ctx1.fillStyle = "#ffffff";
         ctx1.fillRect(0, 0, canvas1.width, 32);
         ctx1.fillRect(0, 0, 50, canvas1.height);
-
         ctx1.strokeStyle = "rgba(0,0,0,0.08)";
         ctx1.lineWidth = 1;
         ctx1.beginPath();
         ctx1.moveTo(0, 32); ctx1.lineTo(canvas1.width, 32);
         ctx1.moveTo(50, 0); ctx1.lineTo(50, canvas1.height);
         ctx1.stroke();
-
         ctx1.fillStyle = "#1d1d1f";
         ctx1.font = "bold 10px sans-serif";
         ctx1.textBaseline = "middle";
-
         let stepPx = customGridStepPx;
         while ((stepPx * scale1) < 35) {
             stepPx *= 2;
         }
         let useMm = axisInMm;
-
         let startImgX = panX1;
         let endImgX = panX1 + masterImg.width * scale1;
         for (let screenX = startImgX; screenX <= endImgX; screenX += stepPx * scale1) {
@@ -1245,7 +1473,6 @@
                 ctx1.fillRect(screenX, 28, 1, 4);
             }
         }
-
         let startImgY = panY1;
         let endImgY = panY1 + masterImg.height * scale1;
         for (let screenY = startImgY; screenY <= endImgY; screenY += stepPx * scale1) {
@@ -1263,43 +1490,59 @@
 
     function updateTable1() {
         measurementsTable1.innerHTML = "";
-        measurements1.forEach((m, index) => {
+        for (let index = measurements1.length - 1; index >= 0; index--) {
+            const m = measurements1[index];
             const row = measurementsTable1.insertRow();
             const cellName = row.insertCell(0);
             const cellPxTotal = row.insertCell(1);
             const cellMmTotal = row.insertCell(2);
-
+            
             const input = document.createElement('input');
-            input.type = 'text'; input.className = 'name-input'; input.value = m.name;
-            input.addEventListener('input', (e) => { measurements1[index].name = e.target.value; redrawCanvas1(); });
+            input.type = 'text'; 
+            input.className = 'name-input'; 
+            input.value = m.name;
+            input.addEventListener('input', (e) => { 
+                measurements1[index].name = e.target.value; 
+                redrawCanvas1(); 
+            });
+            
             cellName.appendChild(input);
-
             cellPxTotal.textContent = `${m.pixelLength.toFixed(1)} px`;
             cellMmTotal.textContent = pixelsPerMm1 ? `${m.lengthMm.toFixed(2)} mm` : `-`;
-        });
+        }
     }
 
-    /* ================= FILE SAVE OPTIONS ================= */
-    document.getElementById('menuSaveExcel').addEventListener('click', () => {
-        let content = "Measurement Name\tTotal Length (px)\tTotal Length (mm)\n";
+    /* Tab-Separated Data Exports (Identical columns for Excel & Text) */
+    function generateExportData() {
+        let content = "Name\tStart X (px)\tStart Y (px)\tEnd X (px)\tEnd Y (px)\tStart X (mm)\tStart Y (mm)\tEnd X (mm)\tEnd Y (mm)\tLength (px)\tLength (mm)\r\n";
+        
         if (calibrationLine1) {
-            content += `Calibration Reference\t${calibrationLine1.pixelLength.toFixed(2)}\t${calibrationLine1.realMm.toFixed(2)}\n`;
+            let c = calibrationLine1;
+            let sxMm = pixelsPerMm1 ? (c.startX / pixelsPerMm1).toFixed(2) : '-';
+            let syMm = pixelsPerMm1 ? (c.startY / pixelsPerMm1).toFixed(2) : '-';
+            let exMm = pixelsPerMm1 ? (c.endX / pixelsPerMm1).toFixed(2) : '-';
+            let eyMm = pixelsPerMm1 ? (c.endY / pixelsPerMm1).toFixed(2) : '-';
+            content += `Calibration Reference\t${c.startX.toFixed(1)}\t${c.startY.toFixed(1)}\t${c.endX.toFixed(1)}\t${c.endY.toFixed(1)}\t${sxMm}\t${syMm}\t${exMm}\t${eyMm}\t${c.pixelLength.toFixed(2)}\t${c.realMm.toFixed(2)}\r\n`;
         }
-        measurements1.forEach(m => {
-            content += `${m.name}\t${m.pixelLength.toFixed(2)}\t${pixelsPerMm1 ? m.lengthMm.toFixed(2) : '-'}\n`;
-        });
-        downloadFile(content, "photo_measurements.xls", "application/vnd.ms-excel");
+        
+        for (let index = measurements1.length - 1; index >= 0; index--) {
+            let m = measurements1[index];
+            let sxMm = pixelsPerMm1 ? (m.startX / pixelsPerMm1).toFixed(2) : '-';
+            let syMm = pixelsPerMm1 ? (m.startY / pixelsPerMm1).toFixed(2) : '-';
+            let exMm = pixelsPerMm1 ? (m.endX / pixelsPerMm1).toFixed(2) : '-';
+            let eyMm = pixelsPerMm1 ? (m.endY / pixelsPerMm1).toFixed(2) : '-';
+            let lenMm = pixelsPerMm1 ? m.lengthMm.toFixed(2) : '-';
+            content += `${m.name}\t${m.startX.toFixed(1)}\t${m.startY.toFixed(1)}\t${m.endX.toFixed(1)}\t${m.endY.toFixed(1)}\t${sxMm}\t${syMm}\t${exMm}\t${eyMm}\t${m.pixelLength.toFixed(2)}\t${lenMm}\r\n`;
+        }
+        return content;
+    }
+
+    document.getElementById('sideSaveExcel').addEventListener('click', () => {
+        downloadFile(generateExportData(), "photo_measurements.xls", "application/vnd.ms-excel");
     });
 
-    document.getElementById('menuSaveText').addEventListener('click', () => {
-        let content = "--- PHOTO MEASUREMENT REPORT ---\r\n\r\n";
-        if (calibrationLine1) {
-            content += `Calibration Reference: ${calibrationLine1.realMm} mm (${calibrationLine1.pixelLength.toFixed(1)} px)\r\n`;
-        }
-        measurements1.forEach(m => {
-            content += `- ${m.name}: ${pixelsPerMm1 ? m.lengthMm.toFixed(2) + ' mm' : m.pixelLength.toFixed(1) + ' px'}\r\n`;
-        });
-        downloadFile(content, "photo_measurements.txt", "text/plain");
+    document.getElementById('sideSaveText').addEventListener('click', () => {
+        downloadFile(generateExportData(), "photo_measurements.txt", "text/plain");
     });
 
     function downloadFile(content, filename, mimeType) {
@@ -1311,107 +1554,6 @@
         link.click();
         document.body.removeChild(link);
     }
-
-    /* ================= MODULE 2 SCRIPT (Distance Estimator) ================= */
-    const canvasDist = document.getElementById('canvasDist');
-    const ctxDist = canvasDist.getContext('2d');
-    const resetBtn2 = document.getElementById('resetBtn2');
-    const focalValue2 = document.getElementById('focalValue');
-    const pixelValue2 = document.getElementById('pixelValue');
-    const distanceValue2 = document.getElementById('distanceValue');
-    let pointsDist = [];
-    let focalPixelsDist = null;
-
-    function getExifFocal(buffer){
-        const view = new DataView(buffer);
-        if(view.getUint16(0,false)!==0xFFD8) return null;
-        let offset = 2;
-        while(offset < view.byteLength){
-            const marker = view.getUint16(offset,false);
-            offset += 2;
-            if(marker === 0xFFE1){
-                const length = view.getUint16(offset,false);
-                offset += 2;
-                if(view.getUint32(offset,false)!==0x45786966) break;
-                const tiff = offset + 6;
-                const little = view.getUint16(tiff,false)===0x4949;
-                const firstIFD = view.getUint32(tiff+4,little);
-                const dir = tiff + firstIFD;
-                const entries = view.getUint16(dir,little);
-                for(let i=0;i<entries;i++){
-                    const entry = dir + 2 + i*12;
-                    const tag = view.getUint16(entry,little);
-                    if(tag===0x8769){
-                        const exifOffset = view.getUint32(entry+8,little);
-                        const exifDir = tiff + exifOffset;
-                        const exifEntries = view.getUint16(exifDir,little);
-                        for(let j=0;j<exifEntries;j++){
-                            const e = exifDir + 2 + j*12;
-                            const exifTag = view.getUint16(e,little);
-                            if(exifTag===0xA405){
-                                return view.getUint16(e+8,little);
-                            }
-                        }
-                    }
-                }
-            }else{
-                offset += view.getUint16(offset,false);
-            }
-        }
-        return null;
-    }
-
-    function redrawDist(){
-        if(!masterImg.src) return;
-        ctxDist.clearRect(0,0,canvasDist.width,canvasDist.height);
-        ctxDist.drawImage(masterImg,0,0);
-        if(pointsDist.length===2){
-            ctxDist.strokeStyle = '#007AFF';
-            ctxDist.lineWidth = 3;
-            ctxDist.beginPath();
-            ctxDist.moveTo(pointsDist[0].x, pointsDist[0].y);
-            ctxDist.lineTo(pointsDist[1].x, pointsDist[1].y);
-            ctxDist.stroke();
-        }
-        pointsDist.forEach((p,i)=>{
-            ctxDist.fillStyle = '#007AFF';
-            ctxDist.beginPath();
-            ctxDist.arc(p.x,p.y,7,0,Math.PI*2);
-            ctxDist.fill();
-            ctxDist.fillStyle = 'white';
-            ctxDist.font = 'bold 11px sans-serif';
-            ctxDist.textAlign = 'center';
-            ctxDist.textBaseline = 'middle';
-            ctxDist.fillText(i+1,p.x,p.y);
-        });
-    }
-
-    canvasDist.addEventListener('click', e=>{
-        if(!masterImg.src) return;
-        const rect = canvasDist.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * canvasDist.width / rect.width;
-        const y = (e.clientY - rect.top) * canvasDist.height / rect.height;
-        if(pointsDist.length===2) pointsDist = [];
-        pointsDist.push({x,y});
-        redrawDist();
-        if(pointsDist.length===2){
-            const dx = pointsDist[1].x - pointsDist[0].x;
-            const dy = pointsDist[1].y - pointsDist[0].y;
-            const pixelWidth = Math.sqrt(dx*dx + dy*dy);
-            const W = parseFloat(document.getElementById('realWidth').value);
-            const distance = W * focalPixelsDist / pixelWidth;
-            pixelValue2.textContent = `${pixelWidth.toFixed(1)} px`;
-            distanceValue2.textContent = `${distance.toFixed(3)} m`;
-        }
-    });
-
-    resetBtn2.addEventListener('click', ()=>{
-        pointsDist = [];
-        if(masterImg.src) redrawDist();
-        pixelValue2.textContent = '—';
-        distanceValue2.textContent = '—';
-    });
 </script>
-
 </body>
 </html>
